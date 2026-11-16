@@ -1,14 +1,19 @@
 import "server-only";
 import { redirect } from "next/navigation";
 
+/** Bætir skilaboðum við slóð; fyrir framan #kafla ef hann er til staðar */
+function withMessage(path: string, key: "ok" | "villa", message: string) {
+  const [base, hash] = path.split("#");
+  const sep = base.includes("?") ? "&" : "?";
+  return `${base}${sep}${key}=${encodeURIComponent(message)}${hash ? `#${hash}` : ""}`;
+}
+
 /** Beinir aftur á síðu með skilaboðum sem <Flash/> sýnir */
 export function done(path: string, message: string): never {
-  const sep = path.includes("?") ? "&" : "?";
-  redirect(`${path}${sep}ok=${encodeURIComponent(message)}`);
+  redirect(withMessage(path, "ok", message));
 }
 export function fail(path: string, message: string): never {
-  const sep = path.includes("?") ? "&" : "?";
-  redirect(`${path}${sep}villa=${encodeURIComponent(message)}`);
+  redirect(withMessage(path, "villa", message));
 }
 
 export function str(fd: FormData, key: string) {

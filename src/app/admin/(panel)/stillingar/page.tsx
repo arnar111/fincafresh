@@ -152,7 +152,7 @@ export default async function SettingsPage() {
                   <li className="rounded-xl bg-cream-50 p-3"><span className="block font-display text-2xl text-burgundy">{demo.subs}</span>prufuáskriftir</li>
                   <li className="rounded-xl bg-cream-50 p-3"><span className="block font-display text-2xl text-burgundy">{demo.events}</span>prufuatburðir</li>
                 </ul>
-                <p className="text-sm text-muted">Aðeins gögn merkt sem prufugögn eru fjarlægð (netföng sem enda á @prufa.fincafresh.is, pantanir merktar PRUFUGÖGN og kóðinn PRUFA10). Vörur, ávextir, sendingar, stillingar og raunverulegar pantanir haldast.</p>
+                <p className="text-sm text-muted">Aðeins gögn merkt sem prufugögn eru fjarlægð (netföng sem enda á @prufa.fincafresh.is, pantanir merktar PRUFUGÖGN, kóðinn PRUFA10 og tilboð eða póstar til prufunetfanga). Vörur, ávextir, sendingar, stillingar og raunverulegar pantanir haldast.</p>
                 <form action={deleteDemoData}>
                   <SubmitButton variant="danger" confirm="Eyða öllum prufugögnum? Þetta er ekki hægt að afturkalla. Raunveruleg gögn haldast.">
                     <Icon name="trash" className="h-4 w-4" /> Eyða prufugögnum

@@ -44,7 +44,7 @@ async function sendOffer(customerId: string, pct: number) {
       "Takk fyrir að versla hjá okkur!",
       `<p>Hæ ${b.name.split(" ")[0]},</p>
        <p>Við tókum eftir að þú hefur keypt ávaxtakassa hjá okkur ${b.orders} sinnum. Takk fyrir það!</p>
-       <p>Vissir þú að áskrifendur fá afslátt af hverjum kassa? Ef þú hefðir verið í áskrift hefðir þú sparað um <strong>${kr(b.wouldSave)}</strong>.</p>
+       <p>Vissir þú að áskrifendur fá afslátt af hverjum kassa? Ef þú hefðir verið í áskrift hefðir þú sparað um <strong>${kr(b.wouldSave)}</strong></p>
        <p>Til að þakka fyrir þig færðu <strong>${pct}% aukaafslátt</strong> af fyrsta áskriftarkassanum með kóðanum:</p>
        <p style="font-size:22px;font-weight:bold;letter-spacing:.06em;color:#6A2833;background:#F5EBD9;padding:12px 16px;border-radius:12px;display:inline-block">${c.code}</p>
        <p>Kóðinn gildir til ${dateLong(expires)}. Það er enginn binditími og þú getur sleppt sendingu eða gert hlé hvenær sem er.</p>

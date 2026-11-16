@@ -46,7 +46,7 @@ export default async function InsightsPage({ searchParams }: { searchParams: Pro
 
   // Tillögur á mannamáli, reiknaðar úr gögnunum
   const tips: { icon: string; tone: "good" | "warn" | "info"; text: React.ReactNode }[] = [];
-  if (buyers.length) tips.push({ icon: "repeat", tone: "warn", text: <><strong>{buyers.length} viðskiptavinir</strong> hafa keypt stakan kassa tvisvar eða oftar án þess að vera í áskrift. Saman hefðu þau sparað <strong>{kr(totalSave)}</strong>. Sendu þeim persónulegt tilboð hér fyrir neðan.</> });
+  if (buyers.length) tips.push({ icon: "repeat", tone: "warn", text: <><strong>{buyers.length} viðskiptavinir</strong> hafa keypt stakan kassa tvisvar eða oftar án þess að vera í áskrift. Saman hefðu þau sparað <strong>{kr(totalSave)}</strong> Sendu þeim persónulegt tilboð hér fyrir neðan.</> });
   if (ev.upsell_shown >= 10) {
     tips.push(upsellRate >= 25
       ? { icon: "check", tone: "good", text: <>Áskriftarglugginn virkar vel: <strong>{upsellRate}%</strong> þeirra sem velja stakan kassa skipta yfir í áskrift.</> }
