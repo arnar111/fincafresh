@@ -7,6 +7,8 @@ const nextConfig: NextConfig = {
     remotePatterns: [{ protocol: "https", hostname: "**" }],
   },
   serverExternalPackages: ["@prisma/client", "bcryptjs", "nodemailer"],
+  // Tryggir að Prisma vélin (libquery_engine-rhel-openssl-3.0.x) fylgi með í Netlify fallinu
+  outputFileTracingIncludes: { "/**": ["./node_modules/.prisma/client/**/*"] },
 };
 
 export default nextConfig;

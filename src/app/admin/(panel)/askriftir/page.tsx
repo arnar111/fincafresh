@@ -25,7 +25,7 @@ export default async function SubscriptionsPage({ searchParams }: { searchParams
   if (sp.tidni) where.everyNthDelivery = Number(sp.tidni);
   if (sp.q?.trim()) {
     const q = sp.q.trim();
-    where.customer = { OR: [{ name: { contains: q } }, { email: { contains: q.toLowerCase() } }, { phone: { contains: q } }] };
+    where.customer = { OR: [{ name: { contains: q, mode: "insensitive" } }, { email: { contains: q.toLowerCase(), mode: "insensitive" } }, { phone: { contains: q, mode: "insensitive" } }] };
   }
   const page = Math.max(1, Number(sp.sida) || 1);
 

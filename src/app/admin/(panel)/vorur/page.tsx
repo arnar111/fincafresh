@@ -30,7 +30,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
     where: {
       ...(tab === "BOX" || tab === "ITEM" ? { type: tab } : {}),
       ...(tab === "falin" ? { active: false } : {}),
-      ...(q ? { OR: [{ name: { contains: q } }, { sku: { contains: q } }] } : {}),
+      ...(q ? { OR: [{ name: { contains: q, mode: "insensitive" } }, { sku: { contains: q, mode: "insensitive" } }] } : {}),
     },
     orderBy: [{ type: "asc" }, { sortOrder: "asc" }, { name: "asc" }],
     include: { category: true, _count: { select: { subscriptions: { where: { status: "ACTIVE" } } } } },

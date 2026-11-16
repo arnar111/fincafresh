@@ -15,3 +15,7 @@ public/uploads/*
 # Prófanir
 test-results
 playwright-report
+
+# Staðbundinn þróunargagnagrunnur
+.netlify-db
+.netlify

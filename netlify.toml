@@ -1,0 +1,8 @@
+# Netlify: Next.js er greint sjálfkrafa. Gagnagrunnurinn (Netlify Database) er búinn til
+# sjálfkrafa og migrations í netlify/database/migrations/ keyrðar við hverja útgáfu.
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "22"

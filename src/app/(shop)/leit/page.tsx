@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: "Leit", robots: { index: false } };
 export default async function SearchPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   const q = ((await searchParams).q ?? "").trim();
   const [products, fruits] = q
-    ? await Promise.all([searchProducts(q), db.fruit.findMany({ where: { active: true, OR: [{ name: { contains: q } }, { description: { contains: q } }] }, take: 8 })])
+    ? await Promise.all([searchProducts(q), db.fruit.findMany({ where: { active: true, OR: [{ name: { contains: q, mode: "insensitive" } }, { description: { contains: q, mode: "insensitive" } }] }, take: 8 })])
     : [[], []];
   return (
     <>

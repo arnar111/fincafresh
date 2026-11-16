@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
   if (sp.get("kassi")) where.productId = sp.get("kassi")!;
   if (sp.get("tidni")) where.everyNthDelivery = Number(sp.get("tidni"));
   const q = sp.get("q")?.trim();
-  if (q) where.customer = { OR: [{ name: { contains: q } }, { email: { contains: q.toLowerCase() } }, { phone: { contains: q } }] };
+  if (q) where.customer = { OR: [{ name: { contains: q, mode: "insensitive" } }, { email: { contains: q.toLowerCase(), mode: "insensitive" } }, { phone: { contains: q, mode: "insensitive" } }] };
   const subs = await db.subscription.findMany({ where, include: { customer: true, product: true }, orderBy: { createdAt: "desc" } });
   const label = await frequencyMap();
   const rows = [

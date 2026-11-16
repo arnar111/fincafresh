@@ -49,7 +49,15 @@ export async function checkPassword(pw: string, hash: string) {
 
 // ── Stjórnendur ────────────────────────────────────────────────
 export async function loginAdmin(email: string, password: string) {
-  const user = await db.adminUser.findUnique({ where: { email: email.trim().toLowerCase() } });
+  const normalized = email.trim().toLowerCase();
+  // Fyrsta innskráning á nýjum netþjóni: ef enginn stjórnandi er til er hann búinn til
+  // úr ADMIN_EMAIL / ADMIN_PASSWORD umhverfisbreytunum (t.d. á Netlify).
+  const envEmail = (process.env.ADMIN_EMAIL || "").trim().toLowerCase();
+  const envPw = process.env.ADMIN_PASSWORD || "";
+  if (envEmail && envPw.length >= 8 && normalized === envEmail && password === envPw && (await db.adminUser.count()) === 0) {
+    await db.adminUser.create({ data: { email: envEmail, name: "Fincafresh", passwordHash: await hashPassword(envPw) } });
+  }
+  const user = await db.adminUser.findUnique({ where: { email: normalized } });
   if (!user || !(await checkPassword(password, user.passwordHash))) return null;
   await db.adminUser.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
   const token = await sign({ sub: user.id, role: "admin" }, 14);

@@ -69,9 +69,9 @@ export function orderWhere(f: OrderFilters): Prisma.OrderWhereInput {
   if (q) {
     const n = Number(q.replace(/^#/, ""));
     where.OR = [
-      { name: { contains: q } },
-      { email: { contains: q.toLowerCase() } },
-      { phone: { contains: q } },
+      { name: { contains: q, mode: "insensitive" } },
+      { email: { contains: q.toLowerCase(), mode: "insensitive" } },
+      { phone: { contains: q, mode: "insensitive" } },
       ...(Number.isInteger(n) && n > 0 ? [{ number: n }] : []),
     ];
   }

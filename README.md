@@ -2,11 +2,20 @@
 
 Ný vefverslun Fincafresh (ávaxtakassar í áskrift eða stakir, netverslun) ásamt stjórnborði þar sem hægt er að gera allt á einum stað: pantanir, áskriftir, sendingar, vörur, ávexti, greiningu og tengingar við WooCommerce, Pikkoló, Repeat, Samskip og PostHog.
 
-Smíðað með Next.js 15, React 19, Prisma (SQLite) og Tailwind CSS 4.
+Smíðað með Next.js 15, React 19, Prisma, Postgres (Netlify Database) og Tailwind CSS 4. Hýst á Netlify.
 
-## Fljótleg byrjun
+## Á Netlify (fincafresh.netlify.app)
 
-Þarf Node.js 20 eða nýrra.
+Netlify byggir greinina sjálfkrafa við hvert push.
+- **Gagnagrunnur:** Netlify Database (Postgres) er búinn til sjálfkrafa og töflurnar ásamt grunngögnum (kassar, vörur, ávextir, næsta sending) eru settar inn úr `netlify/database/migrations/` við hverja útgáfu.
+- **Myndir** sem hlaðið er upp í stjórnborðinu eru geymdar í Netlify Blobs.
+- **Umhverfisbreytur** (Netlify → Project configuration → Environment variables): `APP_SECRET`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `NEXT_PUBLIC_SITE_URL`, `PIKKOLO_ENVIRONMENT`, `PIKKOLO_VENDOR_ID`. Aðra lykla (Pikkoló API-lykil, WooCommerce, PostHog, SMTP) er best að slá inn í stjórnborðinu undir **Tengingar**.
+- **Fyrsta innskráning:** farðu á `/admin` og skráðu þig inn með `ADMIN_EMAIL` og `ADMIN_PASSWORD`. Þá er stjórnandinn búinn til. Breyttu lykilorðinu strax undir **Stillingar → Aðgangur**.
+- **Prufugögn** eru ekki sett inn á Netlify. Ef þú vilt sýna stjórnborðið með gögnum: **Stillingar → Prufugögn → Setja inn prufugögn**, og eyða þeim aftur með einum smelli.
+
+## Á eigin vél
+
+Þarf Node.js 20.12 eða nýrra.
 
 ```bash
 npm install
@@ -18,6 +27,12 @@ cp .env.example .env
 
 Opnaðu `.env` og settu a.m.k. `APP_SECRET` (langur handahófskenndur strengur) og `ADMIN_EMAIL` / `ADMIN_PASSWORD`.
 
+Ræstu staðbundinn gagnagrunn í sérglugga (sami Postgres og Netlify notar, gögnin eru í `.netlify-db/`):
+
+```bash
+npm run db:local
+```
+
 ```bash
 npm run setup
 ```
@@ -27,9 +42,16 @@ npm run dev
 ```
 
 - Verslunin: http://localhost:3000
-- Stjórnborðið: http://localhost:3000/admin (skráðu þig inn með `ADMIN_EMAIL` / `ADMIN_PASSWORD`)
+- Stjórnborðið: http://localhost:3000/admin
 
-`npm run setup` býr til gagnagrunninn og setur inn kassana þrjá, vörurnar, ávextina og **prufugögn** (prufupantanir, -viðskiptavini og -áskriftir) svo stjórnborðið sýni eitthvað strax. Prufugögnum er eytt með einum smelli undir **Stillingar → Prufugögn**.
+`npm run setup` býr til stjórnandann og setur inn **prufugögn** (prufupantanir, -viðskiptavini og -áskriftir) svo stjórnborðið sýni eitthvað strax. Sleppa má prufugögnum með `SEED_DEMO=false`.
+
+### Breytingar á gagnagrunni
+Ef `prisma/schema.prisma` er breytt þarf nýja migration-skrá í `netlify/database/migrations/` (aldrei breyta skrá sem er þegar komin í loftið). Með `npm run db:local` í gangi býr þessi skipun til muninn á staðbundna gagnagrunninum og skemanu:
+
+```bash
+npx prisma migrate diff --from-url "$DATABASE_URL" --to-schema-datamodel prisma/schema.prisma --script > netlify/database/migrations/20261201120000_lysing.sql
+```
 
 ## Hvað er hvar
 
@@ -75,11 +97,6 @@ Lyklar sem eru slegnir inn í stjórnborðinu eru dulkóðaðir (AES-256-GCM) í
 ## Myndir
 Ljósmyndir koma úr brand-bókinni (kassi, mangó, apríkósur, ferskjur) og úr mockup-inu (vörumyndir af núverandi fincafresh.is). Vörumyndirnar úr mockup-inu eru í lágri upplausn; þær verða skipt út fyrir upprunalegu myndirnar þegar vörur eru fluttar inn úr WooCommerce, eða með því að hlaða upp nýjum myndum í **Vörur**.
 
-## Hýsing
-Vefurinn er venjulegt Node.js forrit (`npm run build` og `npm start`). Hann þarf netþjón með varanlegri diskgeymslu fyrir gagnagrunninn (`prisma/fincafresh.db`) og upphlaðnar myndir (`public/uploads/`), t.d. lítinn VPS, Railway eða Render með disk.
-
-Til að nota Postgres í stað SQLite: breyttu `provider` í `prisma/schema.prisma` í `"postgresql"`, settu Postgres-slóð í `DATABASE_URL` og keyrðu `npm run setup`.
-
 ## Áður en vefurinn fer í loftið
 Stjórnborðið sýnir þennan lista líka undir **Yfirlit → Gátlisti fyrir opnun**.
 
@@ -92,5 +109,4 @@ Stjórnborðið sýnir þennan lista líka undir **Yfirlit → Gátlisti fyrir o
 - [ ] Tengja WooCommerce og flytja inn vörur, viðskiptavini og pantanir
 - [ ] Tengja PostHog
 - [ ] Setja upp SMTP fyrir tölvupóst
-- [ ] Eyða prufugögnum
-- [ ] Setja langan `APP_SECRET` og nýtt lykilorð stjórnanda á netþjóninum
+- [ ] Breyta lykilorði stjórnanda eftir fyrstu innskráningu

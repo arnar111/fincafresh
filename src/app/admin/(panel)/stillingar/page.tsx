@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Icon } from "@/components/ui/Icon";
 import { FrequencyEditor } from "./FrequencyEditor";
 import { countDemo } from "./demo";
-import { addAdmin, changePassword, deleteDemoData, removeAdmin, saveShipping, saveSubscription, saveUpsell } from "./actions";
+import { addAdmin, changePassword, deleteDemoData, loadDemoData, removeAdmin, saveShipping, saveSubscription, saveUpsell } from "./actions";
 
 export const metadata = { title: "Stillingar" };
 
@@ -143,7 +143,7 @@ export default async function SettingsPage() {
         </div>
 
         <div id="prufugogn" className="scroll-mt-6">
-          <Card title="Prufugögn" description="Við uppsetningu voru sett inn prufugögn (tilbúnir viðskiptavinir, pantanir og atburðir) svo hægt væri að prófa stjórnborðið.">
+          <Card title="Prufugögn" description="Prufugögn eru tilbúnir viðskiptavinir, pantanir og atburðir svo hægt sé að prófa og sýna stjórnborðið. Þau eru alltaf merkt og eytt með einum smelli.">
             {hasDemo ? (
               <div className="space-y-4">
                 <ul className="grid gap-2 text-sm sm:grid-cols-4">
@@ -160,7 +160,14 @@ export default async function SettingsPage() {
                 </form>
               </div>
             ) : (
-              <p className="flex items-center gap-2 text-[15px] text-leaf"><Icon name="check" className="h-5 w-5" /> Engin prufugögn eru eftir.{demoFlag?.value === "false" ? " Þeim var eytt." : ""}</p>
+              <div className="space-y-4">
+                <p className="flex items-center gap-2 text-[15px] text-leaf"><Icon name="check" className="h-5 w-5" /> Engin prufugögn eru í kerfinu.{demoFlag?.value === "false" ? " Þeim var eytt." : ""}</p>
+                <form action={loadDemoData}>
+                  <SubmitButton variant="light" confirm="Setja inn prufugögn? Þau birtast í pöntunum, áskriftum og greiningu þar til þeim er eytt hér.">
+                    <Icon name="plus" className="h-4 w-4" /> Setja inn prufugögn
+                  </SubmitButton>
+                </form>
+              </div>
             )}
           </Card>
         </div>

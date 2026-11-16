@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
   const sp = req.nextUrl.searchParams;
   const where: Prisma.CustomerWhereInput = {};
   const q = sp.get("q")?.trim();
-  if (q) where.OR = [{ name: { contains: q } }, { email: { contains: q.toLowerCase() } }, { phone: { contains: q } }, { kennitala: { contains: q } }];
+  if (q) where.OR = [{ name: { contains: q, mode: "insensitive" } }, { email: { contains: q.toLowerCase(), mode: "insensitive" } }, { phone: { contains: q, mode: "insensitive" } }, { kennitala: { contains: q, mode: "insensitive" } }];
   const hopur = sp.get("hopur");
   if (hopur === "askrifendur") where.subscriptions = { some: { status: "ACTIVE" } };
   if (hopur === "postlisti") where.marketingOptIn = true;

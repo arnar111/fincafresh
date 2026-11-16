@@ -1,13 +1,16 @@
-// Fincafresh gagnagrunnur.
-// Sjálfgefið SQLite (ein skrá). Til að nota Postgres: breyttu provider í "postgresql"
-// og DATABASE_URL í .env. Sjá README.
+// Fincafresh gagnagrunnur (Postgres).
+// Á Netlify: Netlify Database er sett upp sjálfkrafa og töflurnar búnar til úr
+// netlify/database/migrations/ við hverja útgáfu. Tengistrengurinn er lesinn í src/lib/db.ts.
+// ATH: Ef skemanu er breytt þarf að bæta við nýrri migration-skrá (sjá README).
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  // "native" fyrir vélina sem byggir, "rhel-openssl-3.0.x" fyrir Netlify föll (AWS Lambda)
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 

@@ -20,7 +20,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
   const page = Math.max(1, Number(sp.sida) || 1);
   const where: Prisma.CustomerWhereInput = {};
   const q = sp.q?.trim();
-  if (q) where.OR = [{ name: { contains: q } }, { email: { contains: q.toLowerCase() } }, { phone: { contains: q } }, { kennitala: { contains: q } }];
+  if (q) where.OR = [{ name: { contains: q, mode: "insensitive" } }, { email: { contains: q.toLowerCase(), mode: "insensitive" } }, { phone: { contains: q, mode: "insensitive" } }, { kennitala: { contains: q, mode: "insensitive" } }];
   if (sp.hopur === "askrifendur") where.subscriptions = { some: { status: "ACTIVE" } };
   if (sp.hopur === "postlisti") where.marketingOptIn = true;
   if (sp.hopur === "stakir") where.AND = [{ subscriptions: { none: { status: "ACTIVE" } } }, { orders: { some: {} } }];

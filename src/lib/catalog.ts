@@ -103,7 +103,7 @@ export async function searchProducts(q: string) {
   const rows = await db.product.findMany({
     where: {
       active: true,
-      OR: [{ name: { contains: term } }, { shortDescription: { contains: term } }, { tagline: { contains: term } }],
+      OR: [{ name: { contains: term, mode: "insensitive" } }, { shortDescription: { contains: term, mode: "insensitive" } }, { tagline: { contains: term, mode: "insensitive" } }],
     },
     take: 24,
   });
