@@ -95,6 +95,34 @@ export const getNextDelivery = cache(async (): Promise<NextDelivery | null> => {
   };
 });
 
+/**
+ * Sending sem nýjar pantanir fara í: fyrsta sendingin þar sem pöntunarfrestur er ekki liðinn.
+ * Fresturinn gildir út daginn sem hann er skráður á. Ef engin slík sending er til er skilað null
+ * (pöntunin fer þá í næstu sendingu sem verður skráð).
+ */
+export const getOrderableDelivery = cache(async (): Promise<NextDelivery | null> => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const d = await db.delivery.findFirst({
+    where: {
+      date: { gte: today },
+      status: { in: ["PLANNED", "PACKING"] },
+      OR: [{ cutoffDate: null }, { cutoffDate: { gte: today } }],
+    },
+    orderBy: { date: "asc" },
+    include: { fruits: { include: { fruit: true }, orderBy: [{ deluxeOnly: "asc" }, { sortOrder: "asc" }] } },
+  });
+  if (!d) return null;
+  return {
+    id: d.id,
+    date: d.date,
+    cutoffDate: d.cutoffDate,
+    title: d.title,
+    note: d.note,
+    fruits: d.fruits.filter((f) => f.fruit.active).map((f) => ({ fruit: f.fruit, deluxeOnly: f.deluxeOnly })),
+  };
+});
+
 export const getFruitBySlug = cache(async (slug: string) => db.fruit.findUnique({ where: { slug } }));
 
 export async function searchProducts(q: string) {

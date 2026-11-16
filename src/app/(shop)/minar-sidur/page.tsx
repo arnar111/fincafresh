@@ -5,11 +5,12 @@ import { db } from "@/lib/db";
 import { getBoxes, getNextDelivery } from "@/lib/catalog";
 import { getSetting } from "@/lib/settings";
 import { liteProduct } from "@/lib/lite";
-import { kr, dateLong, parseJsonList } from "@/lib/format";
+import { kr, dateLong, dateWithDayAcc, parseJsonList } from "@/lib/format";
+import { SKIPPED_BY_CUSTOMER } from "@/lib/subscriptions";
 import { ORDER_STATUS_LABELS, DELIVERY_METHOD_LABELS } from "@/lib/orders";
 import { logout } from "@/app/actions/account";
 import { SubscriptionCard, type SubLite } from "@/components/shop/SubscriptionCard";
-import { DetailsForm } from "@/components/shop/DetailsForm";
+import { DetailsForm, PasswordForm } from "@/components/shop/DetailsForm";
 import { ButtonLink } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 
@@ -25,6 +26,26 @@ export default async function AccountPage() {
     getSetting("subscription.frequencies"),
   ]);
   const liteBoxes = boxes.map(liteProduct);
+  // Pantanir viðskiptavinarins í næstu sendingu og sendingin þar á eftir (til að segja rétt frá "sleppa")
+  const [nextOrders, following] = next
+    ? await Promise.all([
+        db.order.findMany({ where: { deliveryId: next.id, customerId: c.id }, include: { items: true } }),
+        db.delivery.findFirst({ where: { date: { gt: next.date }, status: { in: ["PLANNED", "PACKING"] } }, orderBy: { date: "asc" } }),
+      ])
+    : [[], null];
+  const skipInfo = (s: (typeof subs)[number]) => {
+    const mine = nextOrders.filter((x) => x.subscriptionId === s.id || x.items.some((i) => i.isSubscription && i.productId === s.productId));
+    const active = mine.filter((o) => o.status !== "CANCELLED");
+    const cancelledBySkip = active.length === 0 && mine.some((o) => o.status === "CANCELLED" && o.internalNote === SKIPPED_BY_CUSTOMER);
+    const nextLocked = active.some((o) => !(o.status === "NEW" && o.source === "SUBSCRIPTION" && o.paymentStatus === "UNPAID"));
+    const skipping = s.skipNext || cancelledBySkip;
+    let skipText: string | null = null;
+    if (next && skipping) {
+      if (cancelledBySkip || active.length === 0) skipText = `Þú sleppir sendingunni ${dateWithDayAcc(next.date)}.`;
+      else skipText = `Kassinn í sendingunni ${dateWithDayAcc(next.date)} er þegar frágenginn, svo þú sleppir ${following ? `sendingunni ${dateWithDayAcc(following.date)}` : "sendingunni þar á eftir"}.`;
+    }
+    return { skipping, skipText, nextLocked };
+  };
 
   return (
     <div className="mx-auto max-w-5xl px-4 pb-10 pt-8 sm:px-6 lg:pt-12">
@@ -55,6 +76,7 @@ export default async function AccountPage() {
                 productImage: parseJsonList(s.product.images)[0] ?? "/brand/lemon-mark.svg",
                 deliveryLabel: s.deliveryMethod === "PIKKOLO" ? `Pikkoló${s.pikkoloStationName ? `: ${s.pikkoloStationName}` : ""}` : DELIVERY_METHOD_LABELS[s.deliveryMethod] ?? s.deliveryMethod,
                 createdAt: s.createdAt.toISOString(),
+                ...skipInfo(s),
               };
               return <SubscriptionCard key={s.id} sub={lite} boxes={liteBoxes} frequencies={frequencies} nextDate={next?.date.toISOString() ?? null} />;
             })}
@@ -99,6 +121,14 @@ export default async function AccountPage() {
         <div className="rounded-3xl border border-line bg-cream-50 p-6">
           <p className="mb-4 text-sm text-muted">Netfang: <strong className="text-ink">{c.email}</strong></p>
           <DetailsForm c={{ name: c.name, phone: c.phone, street: c.street, postalCode: c.postalCode, city: c.city, marketingOptIn: c.marketingOptIn }} />
+        </div>
+      </section>
+
+      <section className="mt-12">
+        <h2 className="mb-1 font-display text-3xl text-burgundy">Lykilorð</h2>
+        <p className="mb-4 text-[15px] text-muted">{c.passwordHash ? "Breyttu lykilorðinu þínu." : "Þú skráðir þig inn með tengli. Settu lykilorð ef þú vilt geta skráð þig inn með því næst."}</p>
+        <div className="rounded-3xl border border-line bg-cream-50 p-6">
+          <PasswordForm hasPassword={!!c.passwordHash} />
         </div>
       </section>
     </div>

@@ -87,20 +87,30 @@ export async function importWoo(_prev: TestState, fd: FormData): Promise<TestSta
   try {
     let lines: string[] = [];
     let errors: string[] = [];
+    let done = true;
+    const withProgress = (label: string, r: SyncResult) => `${line(label, r)}${r.progress && !r.done ? ` (${r.progress})` : ""}`;
     if (what === "all") {
       const r = await importEverything(after);
-      lines = [line("Flokkar", r.categories), line("Vörur", r.products), line("Viðskiptavinir", r.customers), line("Pantanir", r.orders)];
+      lines = [line("Flokkar", r.categories), withProgress("Vörur", r.products), withProgress("Viðskiptavinir", r.customers), withProgress("Pantanir", r.orders)];
       errors = [...r.categories.errors, ...r.products.errors, ...r.customers.errors, ...r.orders.errors];
+      done = r.done;
     } else {
       const r = what === "products" ? (await importCategories(), await importProducts()) : what === "customers" ? await importCustomers() : await importOrders(after);
-      lines = [line(what === "products" ? "Vörur" : what === "customers" ? "Viðskiptavinir" : "Pantanir", r)];
+      lines = [withProgress(what === "products" ? "Vörur" : what === "customers" ? "Viðskiptavinir" : "Pantanir", r)];
       errors = r.errors;
-      await setSetting("woo.lastSync", new Date().toISOString());
-      await logActivity("integration", `WooCommerce innflutningur: ${lines[0]}`, errors.length ? "warning" : "success");
+      done = !!r.done;
+      if (done) await setSetting("woo.lastSync", new Date().toISOString());
+      await logActivity("integration", `WooCommerce innflutningur${done ? "" : " (hálfnaður)"}: ${lines[0]}`, errors.length ? "warning" : "success");
     }
     revalidatePath("/admin", "layout");
     revalidatePath("/", "layout");
-    return { ok: errors.length === 0, message: errors.length ? "Innflutningi lokið, en sumt tókst ekki:" : "Innflutningi lokið!", lines: [...lines, ...errors.slice(0, 8)] };
+    // Stórum innflutningi er skipt í skammta (tímamörk á Netlify): ýtt er aftur til að halda áfram
+    const message = !done
+      ? "Innflutningur er hálfnaður. Ýttu aftur á sama takka til að halda áfram þar sem frá var horfið."
+      : errors.length
+        ? "Innflutningi lokið, en sumt tókst ekki:"
+        : "Innflutningi lokið!";
+    return { ok: errors.length === 0, message, lines: [...lines, ...errors.slice(0, 8)] };
   } catch (e) {
     return { ok: false, message: errMsg(e) };
   }

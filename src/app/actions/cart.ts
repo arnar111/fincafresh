@@ -1,11 +1,17 @@
 "use server";
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 import { readCart, writeCart, lineKey, summarize } from "@/lib/cart";
 import { db } from "@/lib/db";
 import { trackLocal } from "@/lib/analytics";
 
 function refresh() {
   revalidatePath("/", "layout");
+}
+
+/** Auðkenni lotunnar (aðeins til ef notandi samþykkti tölfræðikökur) svo kaupferlið í greiningu tengist rétt */
+async function sid() {
+  return ((await cookies()).get("ff_sid")?.value ?? "").replace(/[^a-z0-9]/gi, "").slice(0, 64);
 }
 
 export async function addToCart(input: { productId: string; qty?: number; sub?: boolean; every?: number }) {
@@ -20,7 +26,7 @@ export async function addToCart(input: { productId: string; qty?: number; sub?: 
   if (existing) existing.qty = Math.min(99, existing.qty + qty);
   else cart.items.push({ productId: product.id, qty, sub, every });
   await writeCart(cart);
-  await trackLocal("add_to_cart", { sub, qty, type: product.type }, "", product.id);
+  await trackLocal("add_to_cart", { sub, qty, type: product.type }, await sid(), product.id);
   refresh();
   return { ok: true as const, count: cart.items.reduce((s, i) => s + i.qty, 0) };
 }
@@ -53,7 +59,7 @@ export async function switchMode(key: string, every: number | null) {
   if (merge) merge.qty += line.qty;
   else cart.items.push({ ...target, qty: line.qty });
   await writeCart(cart);
-  if (every !== null) await trackLocal("cart_converted_to_subscription", { every }, "", line.productId);
+  if (every !== null) await trackLocal("cart_converted_to_subscription", { every }, await sid(), line.productId);
   refresh();
 }
 

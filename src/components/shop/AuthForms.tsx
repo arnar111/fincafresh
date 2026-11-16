@@ -42,6 +42,9 @@ export function AuthForms({ defaultEmail }: { defaultEmail: string }) {
         )
       ) : null}
       {tab === "register" ? (
+        regState?.ok ? (
+          <p className="rounded-2xl bg-leaf/10 p-4 text-[15px] text-leaf">{regState.message}</p>
+        ) : (
         <form action={regAction} className="space-y-4">
           <Field label="Nafn"><Input name="name" autoComplete="name" required /></Field>
           <Field label="Netfang"><Input name="email" type="email" autoComplete="email" defaultValue={defaultEmail} required /></Field>
@@ -49,6 +52,7 @@ export function AuthForms({ defaultEmail }: { defaultEmail: string }) {
           {regState && !regState.ok ? <p className="text-sm font-medium text-danger" role="alert">{regState.message}</p> : null}
           <button disabled={regPending} className={buttonClass("dark", "lg", "w-full")}>{regPending ? "Augnablik…" : "Búa til aðgang"}</button>
         </form>
+        )
       ) : null}
     </div>
   );

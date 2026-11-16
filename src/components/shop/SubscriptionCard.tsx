@@ -24,6 +24,12 @@ export type SubLite = {
   productImage: string;
   deliveryLabel: string;
   createdAt: string;
+  /** Satt ef sendingu er sleppt (merki eða pöntun sem var hætt við) */
+  skipping: boolean;
+  /** Nákvæm lýsing á hvaða sendingu er sleppt */
+  skipText: string | null;
+  /** Kassinn í næstu sendingu er þegar greiddur/í vinnslu: "sleppa" gildir um sendinguna þar á eftir */
+  nextLocked: boolean;
 };
 
 const REASONS = ["Of mikið af ávöxtum", "Of dýrt", "Er að fara í frí", "Líkaði ekki innihaldið", "Afhendingin hentar ekki", "Annað"];
@@ -66,16 +72,19 @@ export function SubscriptionCard({ sub, boxes, frequencies, nextDate }: { sub: S
         <div className="border-t border-line/70 bg-white/60 px-5 py-4 sm:px-6">
           {nextDate ? (
             <p className="mb-3 text-[15px]">
-              {sub.skipNext ? (
-                <><Icon name="skip" className="mr-1 inline h-4 w-4 text-orange-600" /> Þú sleppir sendingunni <strong>{dateWithDayAcc(nextDate)}</strong>.</>
+              {sub.skipping && sub.skipText ? (
+                <><Icon name="skip" className="mr-1 inline h-4 w-4 text-orange-600" /> {sub.skipText}</>
               ) : (
                 <><Icon name="calendar" className="mr-1 inline h-4 w-4 text-leaf" /> Næsta sending: <strong>{dateWithDayAcc(nextDate)}</strong></>
               )}
             </p>
           ) : null}
+          {!sub.skipping && sub.nextLocked ? (
+            <p className="-mt-1 mb-3 text-sm text-muted">Kassinn í næstu sendingu er þegar frágenginn, svo „Sleppa“ gildir um sendinguna þar á eftir.</p>
+          ) : null}
           <div className="flex flex-wrap gap-2">
-            <button disabled={pending} onClick={() => run(() => skipNext(sub.id, !sub.skipNext))} className={buttonClass("light", "sm")}>
-              <Icon name="skip" className="h-4 w-4" /> {sub.skipNext ? "Hætta við að sleppa" : "Sleppa næstu sendingu"}
+            <button disabled={pending} onClick={() => run(() => skipNext(sub.id, !sub.skipping))} className={buttonClass("light", "sm")}>
+              <Icon name="skip" className="h-4 w-4" /> {sub.skipping ? "Hætta við að sleppa" : "Sleppa næstu sendingu"}
             </button>
             <button disabled={pending} onClick={() => run(() => pauseSub(sub.id, 4))} className={buttonClass("light", "sm")}><Icon name="pause" className="h-4 w-4" /> Gera hlé í 4 vikur</button>
             <button disabled={pending} onClick={() => setEdit((e) => !e)} className={buttonClass("light", "sm")}><Icon name="edit" className="h-4 w-4" /> Breyta áskrift</button>

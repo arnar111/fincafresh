@@ -6,6 +6,7 @@ import { readCart, summarize, clearCart } from "@/lib/cart";
 import { placeOrder } from "@/lib/orders";
 import { getCustomer, startCustomerSession } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { sendLoginLink } from "@/lib/login-link";
 
 export type CheckoutState = { error: string; fields?: Record<string, string> } | null;
 
@@ -52,17 +53,20 @@ export async function checkout(_: CheckoutState, fd: FormData): Promise<Checkout
 
   const loggedIn = await getCustomer();
   const existing = await db.customer.findUnique({ where: { email: v.email.toLowerCase() } });
-  if (summary.hasSubscription && !loggedIn && !existing?.passwordHash && v.password.length < 8) {
+  // Lykilorð er aðeins notað þegar NÝR aðgangur er stofnaður. Ef netfangið er þegar til
+  // fær viðkomandi innskráningartengil í tölvupósti í staðinn (sannar að hann eigi netfangið).
+  if (summary.hasSubscription && !loggedIn && !existing && v.password.length < 8) {
     return { error: "Búðu til lykilorð (a.m.k. 8 stafir) svo þú getir stjórnað áskriftinni.", fields: { password: "A.m.k. 8 stafir" } };
   }
-  if (v.password && v.password.length > 0 && v.password.length < 8) {
+  if (!existing && v.password && v.password.length < 8) {
     return { error: "Lykilorðið þarf að vera a.m.k. 8 stafir.", fields: { password: "A.m.k. 8 stafir" } };
   }
 
   let orderId = "";
+  let sentLink = false;
   try {
-    const sid = (await cookies()).get("ff_sid")?.value ?? "";
-    const { order, customer } = await placeOrder(summary, {
+    const sid = ((await cookies()).get("ff_sid")?.value ?? "").replace(/[^a-z0-9]/gi, "").slice(0, 64);
+    const { order, customer, isNewCustomer } = await placeOrder(summary, {
       email: v.email,
       name: v.name,
       phone: v.phone,
@@ -75,17 +79,26 @@ export async function checkout(_: CheckoutState, fd: FormData): Promise<Checkout
       pikkoloStationName: v.deliveryMethod === "PIKKOLO" ? v.pikkoloStationName : "",
       pikkoloDeliveryTimeId: v.deliveryMethod === "PIKKOLO" ? v.pikkoloDeliveryTimeId : "",
       customerNote: v.customerNote,
-      password: v.password,
+      password: existing ? "" : v.password,
       marketingOptIn: v.marketing === "on",
       sessionId: sid,
+      authenticatedCustomerId: loggedIn?.id ?? null,
     });
     orderId = order.id;
     await clearCart();
     (await cookies()).set("ff_last_order", order.id, { httpOnly: true, sameSite: "lax", path: "/", maxAge: 60 * 60 * 24 * 7 });
-    if (v.password || (loggedIn && loggedIn.id === customer.id)) await startCustomerSession(customer.id);
+    // Öryggi: aðeins nýr aðgangur (sem kaupandinn stofnaði núna með lykilorði) er skráður inn.
+    // Fyrirliggjandi aðgangur fær innskráningartengil í tölvupósti (t.d. til að stjórna áskrift).
+    if (isNewCustomer && v.password) await startCustomerSession(customer.id);
+    else if (!loggedIn || loggedIn.id !== customer.id) {
+      if (summary.hasSubscription) {
+        await sendLoginLink(customer, "Takk fyrir pöntunina! Smelltu á hnappinn til að skrá þig inn á Mínar síður og stjórna áskriftinni.");
+        sentLink = true;
+      }
+    }
   } catch (e) {
     console.error("[checkout]", e);
     return { error: (e as Error).message || "Ekki tókst að ganga frá pöntuninni. Reyndu aftur eða hafðu samband." };
   }
-  redirect(`/pontun/${orderId}`);
+  redirect(`/pontun/${orderId}${sentLink ? "?tengill=1" : ""}`);
 }

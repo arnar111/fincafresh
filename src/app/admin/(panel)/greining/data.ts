@@ -20,9 +20,11 @@ export const FUNNEL = [
 ] as const;
 
 export async function funnel(since: Date) {
+  // Aðeins lotur með auðkenni (gestir sem samþykktu tölfræðikökur). Atburðir án auðkennis eru ekki
+  // taldir hér, annars rynnu þeir allir saman í eina "lotu".
   const rows = await db.analyticsEvent.groupBy({
     by: ["name", "sessionId"],
-    where: { createdAt: { gte: since }, name: { in: FUNNEL.map((f) => f.name) } },
+    where: { createdAt: { gte: since }, name: { in: FUNNEL.map((f) => f.name) }, sessionId: { not: "" } },
   });
   return FUNNEL.map((f) => ({ ...f, sessions: rows.filter((r) => r.name === f.name).length }));
 }

@@ -2,9 +2,10 @@ import "server-only";
 import { db } from "../db";
 import { logActivity } from "../activity";
 import { slugify, parseJsonList } from "../format";
-import { nextOrderNumber } from "../orders";
+import { isOrderNumberClash, withOrderNumber } from "../orders";
 import { setSetting } from "../settings";
 import {
+  OUR_TO_WOO_STATUS,
   wooFetch,
   wooFetchAll,
   WOO_STATUS_MAP,
@@ -20,7 +21,50 @@ import {
  * Því er öruggt að keyra innflutning oftar en einu sinni.
  */
 
-export type SyncResult = { created: number; updated: number; skipped: number; errors: string[] };
+export type SyncResult = { created: number; updated: number; skipped: number; errors: string[]; done?: boolean; progress?: string };
+
+// ── Innflutningur í skömmtum ───────────────────────────────────
+// Á Netlify keyrir hver aðgerð í falli með tímamörkum. Innflutningur sækir því eina síðu í einu,
+// vistar hvar hann er staddur og hættir þegar tíminn er að renna út. Næsti smellur heldur áfram.
+const TIME_BUDGET_MS = 7000;
+const cursorKey = (kind: string) => `woo.cursor.${kind}`;
+
+async function pagedImport<T>(
+  kind: string,
+  path: string,
+  query: Record<string, string | number>,
+  handle: (item: T, r: SyncResult) => Promise<void>,
+  deadline: number,
+  perPage = 50
+): Promise<SyncResult> {
+  const r: SyncResult = { created: 0, updated: 0, skipped: 0, errors: [], done: false };
+  const key = JSON.stringify({ path, query });
+  const row = await db.setting.findUnique({ where: { key: cursorKey(kind) } });
+  let page = 1;
+  try {
+    const c = row ? (JSON.parse(row.value) as { page: number; key: string }) : null;
+    if (c && c.key === key) page = c.page;
+  } catch {}
+  for (;;) {
+    const { data, totalPages } = await wooFetch<T[]>(path, { query: { ...query, per_page: perPage, page } });
+    for (const item of data) await handle(item, r);
+    if (page >= totalPages || data.length === 0) {
+      await db.setting.deleteMany({ where: { key: cursorKey(kind) } });
+      r.done = true;
+      r.progress = `${totalPages} af ${totalPages} síðum`;
+      return r;
+    }
+    page++;
+    const value = JSON.stringify({ page, key });
+    await db.setting.upsert({ where: { key: cursorKey(kind) }, create: { key: cursorKey(kind), value }, update: { value } });
+    r.progress = `${page - 1} af ${totalPages} síðum`;
+    if (Date.now() > deadline) return r;
+  }
+}
+
+export function importDeadline() {
+  return Date.now() + TIME_BUDGET_MS;
+}
 const empty = (): SyncResult => ({ created: 0, updated: 0, skipped: 0, errors: [] });
 
 type WooCategory = { id: number; name: string; slug: string; menu_order?: number };
@@ -136,18 +180,15 @@ export async function upsertWooProduct(p: WooProduct): Promise<"created" | "upda
   return "created";
 }
 
-export async function importProducts(): Promise<SyncResult> {
-  const r = empty();
-  const products = await wooFetchAll<WooProduct>("/products", { status: "any" });
-  for (const p of products) {
-    if (p.status === "trash") { r.skipped++; continue; }
+export async function importProducts(deadline = importDeadline()): Promise<SyncResult> {
+  return pagedImport<WooProduct>("products", "/products", { status: "any" }, async (p, r) => {
+    if (p.status === "trash") { r.skipped++; return; }
     try {
       (await upsertWooProduct(p)) === "created" ? r.created++ : r.updated++;
     } catch (e) {
       r.errors.push(`Vara ${p.name}: ${(e as Error).message}`);
     }
-  }
-  return r;
+  }, deadline);
 }
 
 // ── Viðskiptavinir ─────────────────────────────────────────────
@@ -176,10 +217,8 @@ export async function upsertWooCustomer(c: WooCustomer): Promise<"created" | "up
   return "created";
 }
 
-export async function importCustomers(): Promise<SyncResult> {
-  const r = empty();
-  const customers = await wooFetchAll<WooCustomer>("/customers", { role: "all" });
-  for (const c of customers) {
+export async function importCustomers(deadline = importDeadline()): Promise<SyncResult> {
+  return pagedImport<WooCustomer>("customers", "/customers", { role: "all" }, async (c, r) => {
     try {
       const res = await upsertWooCustomer(c);
       if (res === "created") r.created++;
@@ -188,8 +227,7 @@ export async function importCustomers(): Promise<SyncResult> {
     } catch (e) {
       r.errors.push(`Viðskiptavinur ${c.email}: ${(e as Error).message}`);
     }
-  }
-  return r;
+  }, deadline);
 }
 
 // ── Pantanir ───────────────────────────────────────────────────
@@ -207,7 +245,16 @@ function deliveryMethodFor(o: WooOrderFull): "PIKKOLO" | "HOME" | "PICKUP" {
   return "HOME";
 }
 
-export async function upsertWooOrder(o: WooOrderFull): Promise<"created" | "updated" | "skipped"> {
+type ProductLookup = { byWoo: Map<number, string>; bySku: Map<string, string> };
+async function productLookup(): Promise<ProductLookup> {
+  const rows = await db.product.findMany({ select: { id: true, wooId: true, sku: true } });
+  return {
+    byWoo: new Map(rows.filter((r) => r.wooId !== null).map((r) => [r.wooId as number, r.id])),
+    bySku: new Map(rows.filter((r) => r.sku).map((r) => [r.sku, r.id])),
+  };
+}
+
+export async function upsertWooOrder(o: WooOrderFull, lookup?: ProductLookup): Promise<"created" | "updated" | "skipped"> {
   const email = (o.billing?.email || "").trim().toLowerCase();
   if (!email) return "skipped";
   const name = `${o.billing?.first_name ?? ""} ${o.billing?.last_name ?? ""}`.trim() || email;
@@ -232,10 +279,10 @@ export async function upsertWooOrder(o: WooOrderFull): Promise<"created" | "upda
 
   // Vörulínur: tengjum við okkar vörur eftir wooId, annars SKU
   const items = [];
+  const products = lookup ?? (await productLookup());
   for (const li of o.line_items ?? []) {
-    const product =
-      (li.product_id ? await db.product.findUnique({ where: { wooId: li.product_id } }) : null) ??
-      (li.sku ? await db.product.findFirst({ where: { sku: li.sku } }) : null);
+    const productId = (li.product_id ? products.byWoo.get(li.product_id) : undefined) ?? (li.sku ? products.bySku.get(li.sku) : undefined) ?? null;
+    const product = productId ? { id: productId } : null;
     const qty = Math.max(1, li.quantity || 1);
     const lineTotal = money(li.total) + money(li.total_tax);
     items.push({
@@ -274,8 +321,24 @@ export async function upsertWooOrder(o: WooOrderFull): Promise<"created" | "upda
 
   const existing = await db.order.findUnique({ where: { wooId: o.id } });
   if (existing) {
+    // Pöntunin er nú afgreidd hér í stjórnborðinu. Uppfærslur frá WooCommerce mega ekki yfirskrifa það
+    // sem stjórnandinn breytti hér (heimilisfang, afhending, tengiliður). Staðan er aðeins tekin úr
+    // WooCommerce ef hún er raunveruleg breyting: ekki ef hún er bara bergmál af stöðunni sem VIÐ sendum
+    // (t.d. "Send" er send sem "processing" og má ekki verða aftur "Í vinnslu").
+    const echo = OUR_TO_WOO_STATUS[existing.status] === o.status;
+    const update = {
+      status: echo ? existing.status : base.status,
+      paymentStatus: base.paymentStatus,
+      paymentMethod: base.paymentMethod,
+      subtotal: base.subtotal,
+      discount: base.discount,
+      shipping: base.shipping,
+      total: base.total,
+      discountCode: base.discountCode,
+      customerNote: base.customerNote,
+    };
     await db.$transaction([
-      db.order.update({ where: { id: existing.id }, data: base }),
+      db.order.update({ where: { id: existing.id }, data: update }),
       db.orderItem.deleteMany({ where: { orderId: existing.id } }),
       db.orderItem.createMany({ data: items.map((i) => ({ ...i, orderId: existing.id })) }),
     ]);
@@ -284,50 +347,54 @@ export async function upsertWooOrder(o: WooOrderFull): Promise<"created" | "upda
 
   // Pöntunarnúmer: notum númerið úr WooCommerce ef það er laust, annars næsta lausa
   const wooNumber = Number(o.number);
-  const taken = Number.isInteger(wooNumber) && wooNumber > 0 ? await db.order.findUnique({ where: { number: wooNumber } }) : true;
-  const number = !taken ? wooNumber : await nextOrderNumber();
-  await db.order.create({
-    data: {
-      ...base,
-      number,
-      wooId: o.id,
-      createdAt: o.date_created_gmt ? new Date(o.date_created_gmt + "Z") : new Date(),
-      items: { create: items },
-    },
-  });
+  const data = { ...base, wooId: o.id, createdAt: o.date_created_gmt ? new Date(o.date_created_gmt + "Z") : new Date(), items: { create: items } };
+  if (Number.isInteger(wooNumber) && wooNumber > 0 && !(await db.order.findUnique({ where: { number: wooNumber } }))) {
+    try {
+      await db.order.create({ data: { ...data, number: wooNumber } });
+      return "created";
+    } catch (e) {
+      if (!isOrderNumberClash(e)) throw e;
+    }
+  }
+  await withOrderNumber((number) => db.order.create({ data: { ...data, number } }));
   return "created";
 }
 
-export async function importOrders(afterIso?: string): Promise<SyncResult> {
-  const r = empty();
-  const orders = await wooFetchAll<WooOrderFull>("/orders", afterIso ? { after: afterIso, orderby: "date", order: "asc" } : { orderby: "date", order: "asc" });
-  for (const o of orders) {
+export async function importOrders(afterIso?: string, deadline = importDeadline()): Promise<SyncResult> {
+  const lookup = await productLookup();
+  const query: Record<string, string> = afterIso ? { after: afterIso, orderby: "date", order: "asc" } : { orderby: "date", order: "asc" };
+  return pagedImport<WooOrderFull>("orders", "/orders", query, async (o, r) => {
     try {
-      const res = await upsertWooOrder(o);
+      const res = await upsertWooOrder(o, lookup);
       if (res === "created") r.created++;
       else if (res === "updated") r.updated++;
       else r.skipped++;
     } catch (e) {
       r.errors.push(`Pöntun #${o.number}: ${(e as Error).message}`);
     }
-  }
-  return r;
+  }, deadline);
 }
 
-/** Sækir allt í réttri röð: flokkar → vörur → viðskiptavinir → pantanir */
+/**
+ * Sækir allt í réttri röð: flokkar → vörur → viðskiptavinir → pantanir.
+ * Ef tíminn klárast er skilað "done: false" og næsta keyrsla heldur áfram þar sem frá var horfið.
+ */
 export async function importEverything(afterIso?: string) {
+  const deadline = importDeadline();
+  const pending: SyncResult = { created: 0, updated: 0, skipped: 0, errors: [], done: false, progress: "bíður" };
   const categories = await importCategories();
-  const products = await importProducts();
-  const customers = await importCustomers();
-  const orders = await importOrders(afterIso);
-  await setSetting("woo.lastSync", new Date().toISOString());
+  const products = await importProducts(deadline);
+  const customers = products.done && Date.now() < deadline ? await importCustomers(deadline) : { ...pending };
+  const orders = customers.done && Date.now() < deadline ? await importOrders(afterIso, deadline) : { ...pending };
+  const done = !!(products.done && customers.done && orders.done);
+  if (done) await setSetting("woo.lastSync", new Date().toISOString());
   const fmt = (n: string, x: SyncResult) => `${n}: ${x.created} nýjar, ${x.updated} uppfærðar${x.errors.length ? `, ${x.errors.length} villur` : ""}`;
   await logActivity(
     "integration",
-    `WooCommerce innflutningur. ${fmt("Flokkar", categories)}. ${fmt("Vörur", products)}. ${fmt("Viðskiptavinir", customers)}. ${fmt("Pantanir", orders)}.`,
+    `WooCommerce innflutningur${done ? "" : " (hálfnaður, heldur áfram við næsta smell)"}. ${fmt("Flokkar", categories)}. ${fmt("Vörur", products)}. ${fmt("Viðskiptavinir", customers)}. ${fmt("Pantanir", orders)}.`,
     [categories, products, customers, orders].some((x) => x.errors.length) ? "warning" : "success"
   );
-  return { categories, products, customers, orders };
+  return { categories, products, customers, orders, done };
 }
 
 // ── Senda vöru til WooCommerce ─────────────────────────────────

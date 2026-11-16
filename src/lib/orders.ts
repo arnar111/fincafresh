@@ -2,7 +2,7 @@ import "server-only";
 import { db } from "./db";
 import { logActivity } from "./activity";
 import { trackLocal } from "./analytics";
-import { getNextDelivery } from "./catalog";
+import { getOrderableDelivery } from "./catalog";
 import { kr, dateWithDayAcc } from "./format";
 import type { CartSummary } from "./cart";
 import { chargeOneOff } from "./integrations/payments";
@@ -11,6 +11,10 @@ import { captureServer } from "./integrations/posthog";
 import { createPikkoloOrder, pikkoloConfig } from "./integrations/pikkolo";
 import { getSetting } from "./settings";
 import { hashPassword } from "./auth";
+
+function escapeHtml(s: string) {
+  return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
+}
 
 export const ORDER_STATUS_LABELS: Record<string, string> = {
   NEW: "Ný",
@@ -36,6 +40,29 @@ export async function nextOrderNumber() {
   return Math.max(10001, (last?.number ?? 10000) + 1);
 }
 
+/** Satt ef villan er árekstur á einstöku pöntunarnúmeri (Prisma P2002 á "number") */
+export function isOrderNumberClash(e: unknown) {
+  const err = e as { code?: string; meta?: { target?: unknown } };
+  if (err?.code !== "P2002") return false;
+  const t = err.meta?.target;
+  return Array.isArray(t) ? t.includes("number") : String(t ?? "").includes("number");
+}
+
+/**
+ * Býr til pöntun með næsta lausa pöntunarnúmeri. Ef tvær pantanir fá sama númer
+ * samtímis er reynt aftur með nýju númeri (allt að 6 sinnum).
+ */
+export async function withOrderNumber<T>(create: (n: number) => Promise<T>): Promise<T> {
+  for (let attempt = 0; ; attempt++) {
+    const n = (await nextOrderNumber()) + attempt;
+    try {
+      return await create(n);
+    } catch (e) {
+      if (!isOrderNumberClash(e) || attempt >= 5) throw e;
+    }
+  }
+}
+
 export type CheckoutInput = {
   email: string;
   name: string;
@@ -52,33 +79,42 @@ export type CheckoutInput = {
   password: string; // valfrjálst: stofna aðgang
   marketingOptIn: boolean;
   sessionId: string;
+  /** Innskráður viðskiptavinur (ef einhver). Aðeins hann má breyta vistuðum upplýsingum sínum. */
+  authenticatedCustomerId: string | null;
 };
 
 export async function placeOrder(summary: CartSummary, input: CheckoutInput) {
   const email = input.email.trim().toLowerCase();
-  const next = await getNextDelivery();
+  // Sending sem er enn opin fyrir pantanir (pöntunarfrestur ekki liðinn)
+  const next = await getOrderableDelivery();
 
-  // Viðskiptavinur: til eða nýr
+  // Viðskiptavinur: til eða nýr.
+  // Öryggi: óinnskráður kaupandi má ALDREI breyta vistuðum upplýsingum eða lykilorði annars
+  // viðskiptavinar. Ef netfangið er þegar til fyllum við aðeins í auða reiti.
   const existing = await db.customer.findUnique({ where: { email } });
-  const customerData = {
-    name: input.name,
-    phone: input.phone,
-    kennitala: input.kennitala,
-    street: input.street,
-    postalCode: input.postalCode,
-    city: input.city,
-    marketingOptIn: input.marketingOptIn || existing?.marketingOptIn || false,
-  };
-  const passwordHash = input.password && !existing?.passwordHash ? await hashPassword(input.password) : undefined;
-  const customer = existing
-    ? await db.customer.update({ where: { id: existing.id }, data: { ...customerData, ...(passwordHash ? { passwordHash } : {}) } })
-    : await db.customer.create({ data: { email, ...customerData, ...(passwordHash ? { passwordHash } : {}) } });
+  const fresh = { name: input.name, phone: input.phone, kennitala: input.kennitala, street: input.street, postalCode: input.postalCode, city: input.city };
+  let customer;
+  let isNewCustomer = false;
+  if (!existing) {
+    customer = await db.customer.create({
+      data: { email, ...fresh, marketingOptIn: input.marketingOptIn, ...(input.password ? { passwordHash: await hashPassword(input.password) } : {}) },
+    });
+    isNewCustomer = true;
+  } else {
+    const isOwner = existing.id === input.authenticatedCustomerId;
+    const data: Record<string, string | boolean> = {};
+    for (const [k, v] of Object.entries(fresh)) {
+      // Eigandi: uppfærir með nýjum gildum (en tæmir aldrei reit, t.d. heimilisfang þegar Pikkoló er valið)
+      // Aðrir: fylla aðeins í reiti sem eru auðir
+      if (v && (isOwner || !existing[k as keyof typeof fresh])) data[k] = v;
+    }
+    if (input.marketingOptIn && !existing.marketingOptIn) data.marketingOptIn = true;
+    customer = Object.keys(data).length ? await db.customer.update({ where: { id: existing.id }, data }) : existing;
+  }
 
-  const number = await nextOrderNumber();
-  const payment = await chargeOneOff({ orderNumber: number, amount: summary.total, email });
-  if (!payment.ok) throw new Error(payment.error);
-
-  const order = await db.order.create({
+  // Pöntunin er stofnuð ógreidd FYRST og svo rukkað, svo greiðsla sé aldrei tekin án pöntunar
+  const created = await withOrderNumber((number) =>
+    db.order.create({
     data: {
       number,
       customerId: customer.id,
@@ -90,9 +126,7 @@ export async function placeOrder(summary: CartSummary, input: CheckoutInput) {
       postalCode: input.postalCode,
       city: input.city,
       status: "NEW",
-      paymentStatus: "PAID",
-      paymentMethod: payment.method,
-      paymentRef: payment.ref,
+      paymentStatus: "UNPAID",
       subtotal: summary.subtotal,
       discount: summary.discount,
       shipping: summary.shipping,
@@ -118,6 +152,19 @@ export async function placeOrder(summary: CartSummary, input: CheckoutInput) {
         })),
       },
     },
+    include: { items: true },
+    })
+  );
+  const number = created.number;
+
+  const payment = await chargeOneOff({ orderNumber: number, amount: summary.total, email });
+  if (!payment.ok) {
+    await db.order.update({ where: { id: created.id }, data: { paymentStatus: "FAILED", status: "CANCELLED", internalNote: `Greiðsla mistókst: ${payment.error}` } });
+    throw new Error(payment.error);
+  }
+  const order = await db.order.update({
+    where: { id: created.id },
+    data: { paymentStatus: "PAID", paymentMethod: payment.method, paymentRef: payment.ref },
     include: { items: true },
   });
 
@@ -161,14 +208,14 @@ export async function placeOrder(summary: CartSummary, input: CheckoutInput) {
   await captureServer("order_completed", email, { order_number: number, total: summary.total, subscriptions: subs.length, items: summary.lines.map((l) => l.product.slug) });
 
   // Staðfestingarpóstur
-  const rows = order.items.map((i) => `<tr><td style="padding:6px 0">${i.quantity} × ${i.name}</td><td style="text-align:right">${kr(i.unitPrice * i.quantity)}</td></tr>`).join("");
+  const rows = order.items.map((i) => `<tr><td style="padding:6px 0">${i.quantity} × ${escapeHtml(i.name)}</td><td style="text-align:right">${kr(i.unitPrice * i.quantity)}</td></tr>`).join("");
   await sendEmail(
     email,
     `Takk fyrir pöntunina! (#${number})`,
     emailLayout(
       "Takk fyrir pöntunina!",
-      `<p>Hæ ${input.name.split(" ")[0]}, við erum búin að fá pöntunina þína.</p>
-       ${next ? `<p>Hún kemur með sendingunni <strong>${dateWithDayAcc(next.date)}</strong>.</p>` : ""}
+      `<p>Hæ ${escapeHtml(input.name.split(" ")[0])}, við erum búin að fá pöntunina þína.</p>
+       ${next ? `<p>Hún kemur með sendingunni <strong>${dateWithDayAcc(next.date)}</strong>.</p>` : `<p>Hún fer í næstu sendingu, sem verður kynnt fljótlega.</p>`}
        <table style="width:100%;border-collapse:collapse">${rows}
        <tr><td style="padding-top:12px;border-top:1px solid #E2D2B6"><strong>Samtals</strong></td><td style="text-align:right;padding-top:12px;border-top:1px solid #E2D2B6"><strong>${kr(summary.total)}</strong></td></tr></table>
        ${subs.length ? `<p>Þú ert nú í áskrift. Þú getur sleppt sendingu, gert hlé eða sagt upp hvenær sem er á Mínum síðum.</p>` : ""}`
@@ -180,7 +227,7 @@ export async function placeOrder(summary: CartSummary, input: CheckoutInput) {
     await submitOrderToPikkolo(order.id).catch(() => undefined);
   }
 
-  return { order, customer, subscriptions: subs };
+  return { order, customer, subscriptions: subs, isNewCustomer, delivery: next };
 }
 
 /** Sendir pöntun til Pikkoló (stjórnborð eða sjálfvirkt eftir greiðslu) */

@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { db } from "./db";
 import { toView, type ProductView } from "./catalog";
 
@@ -43,6 +44,28 @@ export async function coPurchasePairs(): Promise<{ pairs: Pair[]; orders: number
   return { pairs, orders: baskets.length };
 }
 
+/**
+ * Hversu oft aðrar vörur eru keyptar með tilteknum vörum, reiknað í gagnagrunninum (ekki með því að
+ * lesa allar pantanir) og geymt í skyndiminni í 10 mínútur. Notað á vörusíðum, í körfu og í körfuglugga.
+ */
+const coPurchasedWith = unstable_cache(
+  async (ids: string[]) => {
+    if (!ids.length) return [] as { productId: string; together: number }[];
+    const rows = await db.$queryRaw<{ productId: string; together: bigint | number }[]>`
+      SELECT oi2."productId" AS "productId", COUNT(DISTINCT oi2."orderId") AS together
+      FROM "OrderItem" oi1
+      JOIN "OrderItem" oi2 ON oi2."orderId" = oi1."orderId" AND oi2."productId" IS NOT NULL AND oi2."productId" <> oi1."productId"
+      JOIN "Order" o ON o.id = oi1."orderId"
+      WHERE oi1."productId" = ANY(${ids}) AND o.status <> 'CANCELLED'
+      GROUP BY oi2."productId"
+      ORDER BY together DESC
+      LIMIT 24`;
+    return rows.map((r) => ({ productId: r.productId, together: Number(r.together) }));
+  },
+  ["co-purchased-with"],
+  { revalidate: 600 }
+);
+
 /** Meðmæli fyrir eina eða fleiri vörur (t.d. allt í körfunni) */
 export async function recommendFor(productIds: string[], limit = 4): Promise<ProductView[]> {
   const exclude = new Set(productIds);
@@ -52,15 +75,8 @@ export async function recommendFor(productIds: string[], limit = 4): Promise<Pro
   pins.forEach((p, i) => scores.set(p.recommendedProductId, 1000 - i));
 
   if (productIds.length) {
-    const { pairs } = await coPurchasePairs();
-    for (const p of pairs) {
-      const inA = exclude.has(p.a);
-      const inB = exclude.has(p.b);
-      if (inA === inB) continue;
-      const other = inA ? p.b : p.a;
-      const base = inA ? p.aCount : p.bCount;
-      const confidence = base ? p.together / base : 0;
-      scores.set(other, (scores.get(other) ?? 0) + p.together + confidence);
+    for (const r of await coPurchasedWith([...new Set(productIds)].sort())) {
+      scores.set(r.productId, (scores.get(r.productId) ?? 0) + r.together);
     }
   }
 

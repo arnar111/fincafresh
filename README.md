@@ -9,7 +9,7 @@ Smíðað með Next.js 15, React 19, Prisma, Postgres (Netlify Database) og Tail
 Netlify byggir greinina sjálfkrafa við hvert push.
 - **Gagnagrunnur:** Netlify Database (Postgres) er búinn til sjálfkrafa og töflurnar ásamt grunngögnum (kassar, vörur, ávextir, næsta sending) eru settar inn úr `netlify/database/migrations/` við hverja útgáfu.
 - **Myndir** sem hlaðið er upp í stjórnborðinu eru geymdar í Netlify Blobs.
-- **Umhverfisbreytur** (Netlify → Project configuration → Environment variables): `APP_SECRET`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `NEXT_PUBLIC_SITE_URL`, `PIKKOLO_ENVIRONMENT`, `PIKKOLO_VENDOR_ID`. Aðra lykla (Pikkoló API-lykil, WooCommerce, PostHog, SMTP) er best að slá inn í stjórnborðinu undir **Tengingar**.
+- **Umhverfisbreytur** (Netlify → Project configuration → Environment variables): `APP_SECRET`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `NEXT_PUBLIC_SITE_URL`, `PIKKOLO_VENDOR_ID`. Pikkoló umhverfið (staging/production) er valið í stjórnborðinu undir **Tengingar**. Aðra lykla (Pikkoló API-lykil, WooCommerce, PostHog, SMTP) er best að slá inn í stjórnborðinu undir **Tengingar**.
 - **Fyrsta innskráning:** farðu á `/admin` og skráðu þig inn með `ADMIN_EMAIL` og `ADMIN_PASSWORD`. Þá er stjórnandinn búinn til. Breyttu lykilorðinu strax undir **Stillingar → Aðgangur**.
 - **Sýndargögn** eru ekki sett inn sjálfkrafa á Netlify. Efst á **Yfirliti** í stjórnborðinu er takkinn **Setja inn sýndargögn** sem fyllir kerfið af merktum gögnum (pantanir, áskriftir, fyrirspurnir, atburðir fyrir greiningu og prufuviðskiptavinur fyrir Mínar síður). Sami staður býður upp á að endurstilla þau eða eyða með einum smelli; raunveruleg gögn eru aldrei snert.
 
@@ -77,7 +77,7 @@ npx prisma migrate diff --from-url "$DATABASE_URL" --to-schema-datamodel prisma/
 | Kerfi | Staða | Athugasemd |
 | --- | --- | --- |
 | **Pikkoló** | Útfært | Stöðvaleit, stofna/sækja/afturkalla pöntun, samkvæmt skjölun frá Pikkoló og opinbera SDK-inu. Sjálfgefið í `staging` (prófunarumhverfi Pikkoló). Skiptu í `production` undir Tengingar þegar allt er tilbúið. |
-| **WooCommerce** | Útfært | Innflutningur á vörum, flokkum, viðskiptavinum og pöntunum (REST API v3) og webhook fyrir rauntímauppfærslur. Slóð og lyklar sett inn undir Tengingar. |
+| **WooCommerce** | Útfært | Innflutningur á vörum, flokkum, viðskiptavinum og pöntunum (REST API v3) og webhook fyrir rauntímauppfærslur. Stórum innflutningi er skipt í skammta: ýtt er aftur á takkann til að halda áfram. Slóð og lyklar sett inn undir Tengingar. |
 | **PostHog** | Útfært | Atburðir úr vafranum (aðeins með samþykki fyrir vafrakökum) og frá netþjóni; greining í stjórnborði með HogQL. |
 | **Repeat** | Bíður | Repeat birtir ekki opinbera API-skjölun. Þangað til eru áskriftir stjórnaðar hér og hægt að flytja inn CSV. Útfært um leið og skjölun berst (`src/lib/integrations/repeat.ts`). |
 | **Samskip** | Bíður | Sótt hefur verið um API-aðgang. Þangað til býr stjórnborðið til sendingarlista (CSV) og hægt er að skrá rakningarnúmer. |

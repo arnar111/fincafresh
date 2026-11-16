@@ -156,7 +156,10 @@ export async function seedDemo(db: PrismaClient) {
 
   // Áskriftarpantanir (sjálfvirkar) sem bíða greiðslu frá Repeat, tengdar næstu sendingu
   if (delivery) {
-    for (const s of subs.filter((x) => x.status === "ACTIVE" && !x.skipNext).slice(0, 6)) {
+    // Aðeins áskriftir sem eiga ekki þegar pöntun í næstu sendingu (eins og raunveruleg keyrsla myndi gera)
+    const hasOrderInNext = (s: Prisma.SubscriptionCreateManyInput) =>
+      drafts.some((d) => d.order.deliveryId === delivery.id && d.order.customerId === s.customerId && d.items.some((i) => i.isSubscription && i.productId === s.productId));
+    for (const s of subs.filter((x) => x.status === "ACTIVE" && !x.skipNext && !hasOrderInNext(x)).slice(0, 6)) {
       const c = customers.find((x) => x.id === s.customerId)!;
       const p = products.find((x) => x.id === s.productId)!;
       const orderId = id();

@@ -5,7 +5,6 @@ import { requireAdmin, hashPassword, checkPassword } from "@/lib/auth";
 import { bool, done, fail, int, intOrNull, str } from "@/lib/admin";
 import { getSetting, setSetting, type Frequency, type ShippingMethod } from "@/lib/settings";
 import { logActivity } from "@/lib/activity";
-import { deleteDemo } from "./demo";
 
 const P = "/admin/stillingar";
 
@@ -98,13 +97,4 @@ export async function removeAdmin(fd: FormData) {
   await logActivity("system", `Stjórnandi fjarlægður: ${u.email}`, "warning");
   revalidatePath(P);
   done(`${P}#adgangur`, `${u.email} hefur ekki lengur aðgang.`);
-}
-
-export async function deleteDemoData() {
-  await requireAdmin();
-  const r = await deleteDemo(db);
-  await logActivity("system", `Prufugögnum eytt: ${r.orders} pantanir, ${r.subs} áskriftir, ${r.customers} viðskiptavinir, ${r.events} atburðir`, "warning");
-  revalidatePath("/admin", "layout");
-  revalidatePath("/", "layout");
-  done(`${P}#prufugogn`, `Prufugögnum eytt: ${r.orders} pantanir, ${r.subs} áskriftir og ${r.customers} viðskiptavinir.`);
 }

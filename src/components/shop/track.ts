@@ -10,6 +10,8 @@ function sid(): string {
       s = Math.random().toString(36).slice(2) + Date.now().toString(36);
       sessionStorage.setItem("ff_sid", s);
     }
+    // Sama auðkenni í lotukökku svo atburðir sem netþjónninn skráir (karfa, pöntun) tengist sömu lotu
+    if (!document.cookie.includes(`ff_sid=${s}`)) document.cookie = `ff_sid=${s}; path=/; SameSite=Lax`;
     return s;
   } catch {
     return "";

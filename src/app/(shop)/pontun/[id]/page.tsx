@@ -13,8 +13,9 @@ import { Celebrate } from "@/components/shop/Celebrate";
 
 export const metadata: Metadata = { title: "Takk fyrir pöntunina", robots: { index: false } };
 
-export default async function OrderConfirmation({ params }: { params: Promise<{ id: string }> }) {
+export default async function OrderConfirmation({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ tengill?: string }> }) {
   const { id } = await params;
+  const sentLink = (await searchParams).tengill === "1";
   const [order, customer, last] = await Promise.all([
     db.order.findUnique({ where: { id }, include: { items: true } }),
     getCustomer(),
@@ -34,6 +35,13 @@ export default async function OrderConfirmation({ params }: { params: Promise<{ 
           Pöntun <strong>#{order.number}</strong> er móttekin. Staðfesting var send á {order.email}.
         </p>
       </div>
+
+      {sentLink ? (
+        <div className="mt-8 flex items-start gap-4 rounded-3xl bg-lemon-100 p-5">
+          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-white text-burgundy"><Icon name="mail" /></span>
+          <p className="text-[15px] text-ink/85">Þú átt þegar aðgang hjá okkur. Við sendum <strong>innskráningartengil</strong> á {order.email} svo þú getir skráð þig inn á Mínar síður og stjórnað áskriftinni.</p>
+        </div>
+      ) : null}
 
       {hasSub ? (
         <div className="mt-8 flex items-start gap-4 rounded-3xl bg-pink-100 p-5 sm:p-6">

@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { getBoxes, getCategories, getFeaturedProducts, getNextDelivery } from "@/lib/catalog";
+import { getBoxes, getCategories, getFeaturedProducts, getNextDelivery, getOrderableDelivery } from "@/lib/catalog";
 import { getSetting } from "@/lib/settings";
 import { liteFruit, liteProduct, findDelux } from "@/lib/lite";
 import { dateWithDayAcc } from "@/lib/format";
@@ -14,9 +14,10 @@ import { ButtonLink } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 
 export default async function HomePage() {
-  const [boxesRaw, next, featured, categories, hero, story, b2b] = await Promise.all([
+  const [boxesRaw, next, orderable, featured, categories, hero, story, b2b] = await Promise.all([
     getBoxes(),
     getNextDelivery(),
+    getOrderableDelivery(),
     getFeaturedProducts(4),
     getCategories(),
     getSetting("content.hero"),
@@ -27,7 +28,9 @@ export default async function HomePage() {
   const delux = boxes.length ? findDelux(boxes) : null;
   const fruits = next?.fruits.map((f) => liteFruit(f.fruit, f.deluxeOnly)) ?? [];
   const maxPct = Math.max(0, ...boxes.map((b) => b.subDiscountPct));
-  const daysToCutoff = next?.cutoffDate ? Math.ceil((next.cutoffDate.getTime() - Date.now()) / 86400000) : null;
+  const startToday = new Date();
+  startToday.setHours(0, 0, 0, 0);
+  const daysToCutoff = next?.cutoffDate ? Math.round((new Date(next.cutoffDate).setHours(0, 0, 0, 0) - startToday.getTime()) / 86400000) : null;
 
   return (
     <>
@@ -42,8 +45,11 @@ export default async function HomePage() {
               {next ? (
                 <>
                   Sendingin kemur <strong className="text-ink">{dateWithDayAcc(next.date)}</strong>
+                  {next.cutoffDate && daysToCutoff !== null && daysToCutoff < 0 ? (
+                    <> · pöntunarfrestur fyrir hana er liðinn og nýjar pantanir fara í {orderable && orderable.id !== next.id ? <>sendinguna <strong className="text-ink">{dateWithDayAcc(orderable.date)}</strong></> : "næstu sendingu á eftir"}</>
+                  ) : null}
                   {next.cutoffDate && daysToCutoff !== null && daysToCutoff >= 0 ? (
-                    <> · pantaðu fyrir <strong className="text-ink">{dateWithDayAcc(next.cutoffDate)}</strong>{daysToCutoff <= 3 ? <span className="ml-1 rounded-full bg-orange/15 px-2 py-0.5 text-sm font-semibold text-orange-600">{daysToCutoff === 0 ? "síðasti dagur!" : `${daysToCutoff} dagar eftir`}</span> : null}</>
+                    <> · pantaðu fyrir <strong className="text-ink">{dateWithDayAcc(next.cutoffDate)}</strong>{daysToCutoff <= 3 ? <span className="ml-1 rounded-full bg-orange/15 px-2 py-0.5 text-sm font-semibold text-orange-600">{daysToCutoff === 0 ? "síðasti dagur!" : daysToCutoff === 1 ? "1 dagur eftir" : `${daysToCutoff} dagar eftir`}</span> : null}</>
                   ) : null}
                   . Smelltu á ávöxt til að lesa meira um hann.
                 </>

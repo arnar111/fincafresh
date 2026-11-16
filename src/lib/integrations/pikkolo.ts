@@ -4,10 +4,11 @@ import { getSetting } from "../settings";
 /**
  * Pikkoló tenging.
  * Heimildir:
- *  - Skjölun frá Pikkoló ("Skjölun - Pikkoló - Fincafresh.pdf"): POST/GET/PUT /orders, POST /orders/{id}/cancel,
- *    GET /stations/available, haus "x-api-key".
- *  - Opinbera SDK-ið (https://qr.pikkolo.is/sdk/pikkolo-sdk.min.js): notar api.pikkolo.is (production) og
- *    api-staging.pikkolo.is (staging), hausinn "x-vendor-id" fyrir stöðvaleit og hash-fallið hér að neðan.
+ *  - Skjölun frá Pikkoló ("Skjölun - Pikkoló - Fincafresh.pdf"): https://qr.pikkolo.is/api/public/v1 með
+ *    POST/GET/PUT /orders, POST /orders/{id}/cancel og GET /stations/available, haus "x-api-key".
+ *    Þessi slóð er notuð í production.
+ *  - Opinbera SDK-ið (https://qr.pikkolo.is/sdk/pikkolo-sdk.min.js): notar api-staging.pikkolo.is fyrir
+ *    staging (prófað og virkar), hausinn "x-vendor-id" fyrir stöðvaleit og hash-fallið hér að neðan.
  */
 
 export type PikkoloDeliveryTime = { id: string; available: boolean; date: string };
@@ -27,7 +28,8 @@ export async function pikkoloConfig() {
   const environment = (await getSetting("pikkolo.environment")) === "production" ? "production" : "staging";
   const vendorId = await getSetting("pikkolo.vendorId");
   const apiKey = await getSetting("pikkolo.apiKey");
-  const baseUrl = environment === "production" ? "https://api.pikkolo.is/api/public/v1" : "https://api-staging.pikkolo.is/api/public/v1";
+  // Production: slóðin úr skjölun Pikkoló. Staging: prófunarumhverfið sem SDK-ið notar.
+  const baseUrl = environment === "production" ? "https://qr.pikkolo.is/api/public/v1" : "https://api-staging.pikkolo.is/api/public/v1";
   return { environment, vendorId, apiKey, baseUrl, canSearch: !!vendorId, canSubmit: !!vendorId && !!apiKey };
 }
 

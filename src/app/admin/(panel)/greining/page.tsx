@@ -100,7 +100,7 @@ export default async function InsightsPage({ searchParams }: { searchParams: Pro
       </div>
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-        <Card title="Kaupferlið" description="Fjöldi heimsókna sem komust á hvert stig.">
+        <Card title="Kaupferlið" description="Fjöldi heimsókna sem komust á hvert stig (aðeins gestir sem samþykktu tölfræðivafrakökur).">
           <div className="space-y-4">
             {steps.map((s, i) => (
               <HBar key={s.name} label={`${i + 1}. ${s.label}`} value={s.sessions} max={maxStep} sub={i > 0 ? `${pct(s.sessions, steps[i - 1].sessions)}% af fyrra stigi` : undefined} color={i === 3 ? "#248A36" : "#6A2833"} />

@@ -260,7 +260,8 @@ export function CheckoutForm({
             ) : (
               <>
                 <p className="mb-3 text-[15px] text-muted">
-                  {needPassword ? "Búðu til lykilorð svo þú getir sleppt sendingu, gert hlé eða breytt áskriftinni á Mínum síðum." : "Búðu til lykilorð ef þú vilt geta skoðað pantanir á Mínum síðum."}
+                  {needPassword ? "Búðu til lykilorð svo þú getir sleppt sendingu, gert hlé eða breytt áskriftinni á Mínum síðum." : "Búðu til lykilorð ef þú vilt geta skoðað pantanir á Mínum síðum."}{" "}
+                  Ef þú átt þegar aðgang færðu innskráningartengil í tölvupósti í staðinn.
                 </p>
                 <Input label="Lykilorð" name="password" type="password" autoComplete="new-password" minLength={8} required={needPassword} error={f.password} hint="A.m.k. 8 stafir" className="max-w-sm" />
               </>

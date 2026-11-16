@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { readCart, summarize } from "@/lib/cart";
 import { getSetting } from "@/lib/settings";
 import { getCustomer } from "@/lib/auth";
-import { getNextDelivery } from "@/lib/catalog";
+import { getOrderableDelivery } from "@/lib/catalog";
 import { paymentMode } from "@/lib/integrations/payments";
 import { pikkoloConfig } from "@/lib/integrations/pikkolo";
 import { liteProduct } from "@/lib/lite";
@@ -19,7 +19,7 @@ export default async function CheckoutPage() {
   const [methods, customer, next, mode, pk, frequencies] = await Promise.all([
     getSetting("shipping.methods"),
     getCustomer(),
-    getNextDelivery(),
+    getOrderableDelivery(),
     paymentMode(),
     pikkoloConfig(),
     getSetting("subscription.frequencies"),

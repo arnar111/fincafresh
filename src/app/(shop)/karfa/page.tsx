@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { readCart, summarize } from "@/lib/cart";
 import { recommendFor } from "@/lib/recommendations";
 import { getSetting } from "@/lib/settings";
-import { getNextDelivery } from "@/lib/catalog";
+import { getOrderableDelivery } from "@/lib/catalog";
 import { liteProduct } from "@/lib/lite";
 import { CartView, type CartLineLite } from "@/components/shop/CartView";
 
@@ -14,7 +14,7 @@ export default async function CartPage() {
   const [recs, frequencies, next] = await Promise.all([
     s.lines.length ? recommendFor(s.lines.map((l) => l.product.id), 4) : Promise.resolve([]),
     getSetting("subscription.frequencies"),
-    getNextDelivery(),
+    getOrderableDelivery(),
   ]);
   const lines: CartLineLite[] = s.lines.map((l) => ({
     key: l.key,

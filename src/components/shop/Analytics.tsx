@@ -33,6 +33,8 @@ export function Analytics({ posthogKey, posthogHost }: { posthogKey: string; pos
     try {
       localStorage.setItem("ff_consent", v);
     } catch {}
+    // Án samþykkis er engin lotukaka fyrir tölfræði
+    if (v !== "all") document.cookie = "ff_sid=; path=/; max-age=0; SameSite=Lax";
     setConsent(v);
   };
 
