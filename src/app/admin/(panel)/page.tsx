@@ -11,6 +11,7 @@ import { BarChart } from "@/components/admin/charts";
 import { Icon } from "@/components/ui/Icon";
 import { ButtonLink } from "@/components/ui/Button";
 import { cn } from "@/components/ui/cn";
+import { DemoPanel } from "@/components/admin/DemoPanel";
 
 export const dynamic = "force-dynamic";
 
@@ -103,7 +104,7 @@ export default async function Dashboard() {
     { done: woo.configured, label: "WooCommerce tengt", help: "Þarf slóð verslunar og REST API lykla til að flytja inn vörur, pantanir og viðskiptavini.", href: "/admin/tengingar" },
     { done: !!smtpHost, label: "Tölvupóstur (SMTP) stilltur", help: "Án SMTP eru staðfestingarpóstar ekki sendir heldur vistaðir undir Fyrirspurnir → Útsendur póstur.", href: "/admin/tengingar" },
     { done: unreviewedFruits === 0, label: "Ávaxtatextar yfirfarnir", help: "Textarnir sem birtast þegar smellt er á ávöxt eru drög. Lestu þá yfir og hakaðu við 'Yfirfarið'.", href: "/admin/avextir" },
-    { done: demo?.value !== "true", label: "Prufugögnum eytt", help: "Prufupantanir og prufuviðskiptavinir eru til svo hægt sé að prófa kerfið. Eyddu þeim áður en opnað er.", href: "/admin/stillingar#prufugogn" },
+    { done: demo?.value !== "true", label: "Sýndargögnum eytt", help: "Sýndarpantanir og sýndarviðskiptavinir eru til svo hægt sé að prófa kerfið. Eyddu þeim áður en opnað er (takki efst á Yfirliti).", href: "/admin" },
   ];
   const doneCount = checklist.filter((c) => c.done).length;
 
@@ -122,6 +123,10 @@ export default async function Dashboard() {
           </>
         }
       />
+
+      <div className="mb-6">
+        <DemoPanel from="/admin" />
+      </div>
 
       <Explainer>
         <p>Yfirlitið er upphafssíðan þín. Efst eru helstu tölur, svo listi yfir <strong>það sem þarf að gera</strong> (smelltu á línu til að fara beint í verkið).</p>

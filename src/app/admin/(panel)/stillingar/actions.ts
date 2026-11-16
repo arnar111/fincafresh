@@ -6,7 +6,6 @@ import { bool, done, fail, int, intOrNull, str } from "@/lib/admin";
 import { getSetting, setSetting, type Frequency, type ShippingMethod } from "@/lib/settings";
 import { logActivity } from "@/lib/activity";
 import { deleteDemo } from "./demo";
-import { seedDemo } from "@/lib/seed/demo";
 
 const P = "/admin/stillingar";
 
@@ -108,18 +107,4 @@ export async function deleteDemoData() {
   revalidatePath("/admin", "layout");
   revalidatePath("/", "layout");
   done(`${P}#prufugogn`, `Prufugögnum eytt: ${r.orders} pantanir, ${r.subs} áskriftir og ${r.customers} viðskiptavinir.`);
-}
-
-/** Setur inn prufugögn (t.d. til að sýna stjórnborðið). Þeim er eytt aftur með "Eyða prufugögnum". */
-export async function loadDemoData() {
-  await requireAdmin();
-  try {
-    await seedDemo(db);
-    await db.setting.upsert({ where: { key: "demo.seeded" }, create: { key: "demo.seeded", value: "true" }, update: { value: "true" } });
-    await logActivity("system", "Prufugögn sett inn.", "info");
-  } catch (e) {
-    fail("/admin/stillingar#prufugogn", `Tókst ekki að setja inn prufugögn: ${(e as Error).message}`);
-  }
-  revalidatePath("/admin", "layout");
-  done("/admin/stillingar#prufugogn", "Prufugögn eru komin inn. Þeim er eytt hér með einum smelli.");
 }

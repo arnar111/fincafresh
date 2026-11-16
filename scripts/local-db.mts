@@ -1,6 +1,7 @@
 // Staðbundinn Postgres-gagnagrunnur fyrir þróun (sami gagnagrunnur og Netlify notar).
 // Keyrðu: npm run db:local   og settu svo í .env:
-//   DATABASE_URL="postgres://postgres@localhost:5433/postgres"
+//   DATABASE_URL="postgres://postgres@localhost:5433/postgres?connection_limit=1"
+// (connection_limit=1: staðbundni grunnurinn ræður ekki við margar samhliða tengingar frá Prisma)
 // Gögnin eru geymd í möppunni .netlify-db/ (ekki í git).
 import { NetlifyDB } from "@netlify/database-dev";
 

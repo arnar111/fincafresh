@@ -42,7 +42,7 @@ export default async function BoxPage({ params }: { params: Promise<{ slug: stri
           <h1 className="mt-2 font-display text-5xl leading-none text-burgundy sm:text-6xl">{p.name}</h1>
           <p className="mt-4 text-lg text-ink/80">{p.description}</p>
           {isDelux && fruits.some((f) => f.deluxeOnly) ? (
-            <div className="mt-5 flex items-start gap-3 rounded-2xl bg-gradient-to-r from-lemon-100 to-cream-50 p-4 ring-1 ring-lemon">
+            <div className="mt-5 flex items-start gap-3 rounded-2xl bg-lemon-100 p-4">
               <Icon name="crown" className="mt-0.5 h-6 w-6 shrink-0 text-gold" />
               <div className="text-[15px]">
                 <strong className="text-burgundy">Í næstu sendingu fylgja aukalega:</strong>{" "}

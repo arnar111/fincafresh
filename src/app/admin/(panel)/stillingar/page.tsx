@@ -8,20 +8,15 @@ import { Field, Input, Textarea } from "@/components/ui/Field";
 import { Badge } from "@/components/ui/Badge";
 import { Icon } from "@/components/ui/Icon";
 import { FrequencyEditor } from "./FrequencyEditor";
-import { countDemo } from "./demo";
-import { addAdmin, changePassword, deleteDemoData, loadDemoData, removeAdmin, saveShipping, saveSubscription, saveUpsell } from "./actions";
+import { addAdmin, changePassword, removeAdmin, saveShipping, saveSubscription, saveUpsell } from "./actions";
+import { DemoPanel } from "@/components/admin/DemoPanel";
 
 export const metadata = { title: "Stillingar" };
 
 export default async function SettingsPage() {
   const me = await requireAdmin();
   const s = await getSettings(["shipping.methods", "shipping.pricesConfirmed", "subscription.defaultDiscountPct", "subscription.frequencies", "upsell.enabled", "upsell.title", "upsell.body"]);
-  const [admins, demo, demoFlag] = await Promise.all([
-    db.adminUser.findMany({ orderBy: { createdAt: "asc" } }),
-    countDemo(db),
-    db.setting.findUnique({ where: { key: "demo.seeded" } }),
-  ]);
-  const hasDemo = demo.customers + demo.orders + demo.events + demo.code > 0;
+  const admins = await db.adminUser.findMany({ orderBy: { createdAt: "asc" } });
 
   return (
     <>
@@ -32,7 +27,7 @@ export default async function SettingsPage() {
       </Explainer>
 
       <nav className="mb-6 flex flex-wrap gap-2 text-sm">
-        {[["sending", "Afhending og sendingarverð"], ["askrift", "Áskriftir"], ["upsala", "Áskriftarglugginn"], ["adgangur", "Aðgangur"], ["prufugogn", "Prufugögn"]].map(([id, label]) => (
+        {[["sending", "Afhending og sendingarverð"], ["askrift", "Áskriftir"], ["upsala", "Áskriftarglugginn"], ["adgangur", "Aðgangur"], ["prufugogn", "Sýndargögn"]].map(([id, label]) => (
           <a key={id} href={`#${id}`} className="rounded-full border border-line bg-white px-3.5 py-1.5 font-semibold text-burgundy hover:bg-cream">{label}</a>
         ))}
       </nav>
@@ -143,33 +138,7 @@ export default async function SettingsPage() {
         </div>
 
         <div id="prufugogn" className="scroll-mt-6">
-          <Card title="Prufugögn" description="Prufugögn eru tilbúnir viðskiptavinir, pantanir og atburðir svo hægt sé að prófa og sýna stjórnborðið. Þau eru alltaf merkt og eytt með einum smelli.">
-            {hasDemo ? (
-              <div className="space-y-4">
-                <ul className="grid gap-2 text-sm sm:grid-cols-4">
-                  <li className="rounded-xl bg-cream-50 p-3"><span className="block font-display text-2xl text-burgundy">{demo.customers}</span>prufuviðskiptavinir</li>
-                  <li className="rounded-xl bg-cream-50 p-3"><span className="block font-display text-2xl text-burgundy">{demo.orders}</span>prufupantanir</li>
-                  <li className="rounded-xl bg-cream-50 p-3"><span className="block font-display text-2xl text-burgundy">{demo.subs}</span>prufuáskriftir</li>
-                  <li className="rounded-xl bg-cream-50 p-3"><span className="block font-display text-2xl text-burgundy">{demo.events}</span>prufuatburðir</li>
-                </ul>
-                <p className="text-sm text-muted">Aðeins gögn merkt sem prufugögn eru fjarlægð (netföng sem enda á @prufa.fincafresh.is, pantanir merktar PRUFUGÖGN, kóðinn PRUFA10 og tilboð eða póstar til prufunetfanga). Vörur, ávextir, sendingar, stillingar og raunverulegar pantanir haldast.</p>
-                <form action={deleteDemoData}>
-                  <SubmitButton variant="danger" confirm="Eyða öllum prufugögnum? Þetta er ekki hægt að afturkalla. Raunveruleg gögn haldast.">
-                    <Icon name="trash" className="h-4 w-4" /> Eyða prufugögnum
-                  </SubmitButton>
-                </form>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <p className="flex items-center gap-2 text-[15px] text-leaf"><Icon name="check" className="h-5 w-5" /> Engin prufugögn eru í kerfinu.{demoFlag?.value === "false" ? " Þeim var eytt." : ""}</p>
-                <form action={loadDemoData}>
-                  <SubmitButton variant="light" confirm="Setja inn prufugögn? Þau birtast í pöntunum, áskriftum og greiningu þar til þeim er eytt hér.">
-                    <Icon name="plus" className="h-4 w-4" /> Setja inn prufugögn
-                  </SubmitButton>
-                </form>
-              </div>
-            )}
-          </Card>
+          <DemoPanel from="/admin/stillingar#prufugogn" compact />
         </div>
       </div>
     </>

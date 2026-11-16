@@ -7,19 +7,22 @@ export const DEMO_DOMAIN = "@prufa.fincafresh.is";
 export async function countDemo(db: PrismaClient) {
   const customers = await db.customer.findMany({ where: { email: { endsWith: DEMO_DOMAIN } }, select: { id: true } });
   const ids = customers.map((c) => c.id);
-  const [orders, subs, events, code] = await Promise.all([
+  const [orders, subs, events, code, inquiries, newsletter] = await Promise.all([
     db.order.count({ where: { OR: [{ customerId: { in: ids } }, { internalNote: "PRUFUGÖGN" }, { email: { endsWith: DEMO_DOMAIN } }] } }),
     db.subscription.count({ where: { customerId: { in: ids } } }),
     db.analyticsEvent.count({ where: { props: { contains: '"demo":true' } } }),
     db.discountCode.count({ where: { OR: [{ code: "PRUFA10" }, { description: { contains: DEMO_DOMAIN } }] } }),
+    db.inquiry.count({ where: { email: { endsWith: DEMO_DOMAIN } } }),
+    db.newsletterSubscriber.count({ where: { email: { endsWith: DEMO_DOMAIN } } }),
   ]);
-  return { customers: ids.length, orders, subs, events, code };
+  return { customers: ids.length, orders, subs, events, code, inquiries, newsletter };
 }
 
 /**
  * Eyðir prufugögnum sem voru sett inn við uppsetningu.
  * Snertir aðeins: viðskiptavini með netfang @prufa.fincafresh.is, pantanir þeirra (og pantanir merktar PRUFUGÖGN),
- * áskriftir þeirra, atburði merkta {"demo":true}, prufukóðann PRUFA10, tilboðskóða og útsendan póst til prufunetfanga.
+ * áskriftir þeirra, atburði merkta {"demo":true}, prufukóðann PRUFA10, tilboðskóða, útsendan póst,
+ * fyrirspurnir og póstlistaskráningar frá prufunetföngum.
  */
 export async function deleteDemo(db: PrismaClient) {
   const customers = await db.customer.findMany({ where: { email: { endsWith: DEMO_DOMAIN } }, select: { id: true } });
@@ -31,7 +34,9 @@ export async function deleteDemo(db: PrismaClient) {
     const events = await tx.analyticsEvent.deleteMany({ where: { props: { contains: '"demo":true' } } });
     await tx.discountCode.deleteMany({ where: { OR: [{ code: "PRUFA10" }, { description: { contains: DEMO_DOMAIN } }] } });
     await tx.emailOutbox.deleteMany({ where: { to: { endsWith: DEMO_DOMAIN } } });
+    await tx.inquiry.deleteMany({ where: { email: { endsWith: DEMO_DOMAIN } } });
+    await tx.newsletterSubscriber.deleteMany({ where: { email: { endsWith: DEMO_DOMAIN } } });
     await tx.setting.upsert({ where: { key: "demo.seeded" }, create: { key: "demo.seeded", value: "false" }, update: { value: "false" } });
     return { orders: orders.count, subs: subs.count, customers: cust.count, events: events.count };
-  });
+  }, { timeout: 30000, maxWait: 10000 });
 }

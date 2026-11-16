@@ -185,7 +185,7 @@ export default async function DeliveryDetail({ params }: { params: Promise<{ id:
                       <form action={moveFruit}><H /><input type="hidden" name="dfId" value={df.id} /><input type="hidden" name="dir" value="down" /><button disabled={i === fruitsSorted.length - 1} className="rounded-lg p-2 text-burgundy hover:bg-cream disabled:opacity-30" aria-label={`Færa ${df.fruit.name} niður`}><Icon name="arrow" className="h-4 w-4 rotate-90" /></button></form>
                       <form action={toggleDeluxe}>
                         <H /><input type="hidden" name="dfId" value={df.id} />
-                        <button className={cn("rounded-full px-3 py-1.5 text-xs font-semibold", df.deluxeOnly ? "bg-gradient-to-r from-[#FFE27A] via-lemon to-[#E0A100] text-burgundy-900" : "border border-line text-burgundy hover:bg-cream")}>
+                        <button className={cn("rounded-full px-3 py-1.5 text-xs font-semibold", df.deluxeOnly ? "bg-lemon text-burgundy-900" : "border border-line text-burgundy hover:bg-cream")}>
                           {df.deluxeOnly ? "★ Aðeins Delúx" : "Gera að Delúx"}
                         </button>
                       </form>

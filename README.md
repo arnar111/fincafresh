@@ -11,7 +11,7 @@ Netlify byggir greinina sjálfkrafa við hvert push.
 - **Myndir** sem hlaðið er upp í stjórnborðinu eru geymdar í Netlify Blobs.
 - **Umhverfisbreytur** (Netlify → Project configuration → Environment variables): `APP_SECRET`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `NEXT_PUBLIC_SITE_URL`, `PIKKOLO_ENVIRONMENT`, `PIKKOLO_VENDOR_ID`. Aðra lykla (Pikkoló API-lykil, WooCommerce, PostHog, SMTP) er best að slá inn í stjórnborðinu undir **Tengingar**.
 - **Fyrsta innskráning:** farðu á `/admin` og skráðu þig inn með `ADMIN_EMAIL` og `ADMIN_PASSWORD`. Þá er stjórnandinn búinn til. Breyttu lykilorðinu strax undir **Stillingar → Aðgangur**.
-- **Prufugögn** eru ekki sett inn á Netlify. Ef þú vilt sýna stjórnborðið með gögnum: **Stillingar → Prufugögn → Setja inn prufugögn**, og eyða þeim aftur með einum smelli.
+- **Sýndargögn** eru ekki sett inn sjálfkrafa á Netlify. Efst á **Yfirliti** í stjórnborðinu er takkinn **Setja inn sýndargögn** sem fyllir kerfið af merktum gögnum (pantanir, áskriftir, fyrirspurnir, atburðir fyrir greiningu og prufuviðskiptavinur fyrir Mínar síður). Sami staður býður upp á að endurstilla þau eða eyða með einum smelli; raunveruleg gögn eru aldrei snert.
 
 ## Á eigin vél
 

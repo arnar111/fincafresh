@@ -33,9 +33,9 @@ export function BoxChooser({ boxes }: { boxes: LiteProduct[] }) {
           const isDelux = b.tier === "DELUX";
           const price = sub ? b.subPrice : b.price;
           return (
-            <article key={b.id} className={cn("group relative flex flex-col rounded-[1.75rem] border bg-cream-50 p-4 transition hover:-translate-y-1 hover:shadow-pop", isDelux ? "border-transparent ring-2 ring-lemon shadow-[0_0_0_6px_rgb(249_194_20/.15),0_30px_60px_-30px_rgb(217_164_0/.7)]" : "border-line")}>
+            <article key={b.id} className={cn("group relative flex flex-col rounded-[1.75rem] border bg-cream-50 p-4 transition hover:-translate-y-1 hover:shadow-pop", isDelux ? "border-2 border-gold/70" : "border-line")}>
               {isDelux ? (
-                <span className="absolute -top-3 left-6 z-10 inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-[#FFE27A] via-lemon to-[#E0A100] px-3 py-1 text-xs font-bold uppercase tracking-wide text-burgundy-900 shadow-[0_6px_18px_rgb(217_164_0/.5)]">
+                <span className="absolute -top-3 left-6 z-10 inline-flex items-center gap-1 rounded-full bg-lemon px-3 py-1 text-xs font-bold uppercase tracking-wide text-burgundy-900">
                   <Icon name="crown" className="h-4 w-4" /> Sælkerakassi
                 </span>
               ) : null}

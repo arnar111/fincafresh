@@ -10,7 +10,7 @@ const tones: Record<Tone, string> = {
   orange: "bg-orange/15 text-orange-600",
   burgundy: "bg-burgundy text-cream",
   danger: "bg-danger/10 text-danger",
-  gold: "bg-gradient-to-r from-[#FFE27A] via-lemon to-[#E0A100] text-burgundy-900 shadow-[0_0_14px_rgb(249_194_20/.55)]",
+  gold: "bg-lemon text-burgundy-900",
   muted: "bg-ink/5 text-muted",
 };
 

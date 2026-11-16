@@ -21,8 +21,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <main className="min-w-0 flex-1">
         {demo?.value === "true" ? (
           <div className="border-b border-lemon/60 bg-lemon-100 px-4 py-2 text-center text-sm text-burgundy-900">
-            Þú ert að skoða <strong>prufugögn</strong> svo hægt sé að prófa allt. Þeim er eytt með einum smelli undir{" "}
-            <a href="/admin/stillingar#prufugogn" className="font-semibold underline">Stillingar → Prufugögn</a>.
+            Þú ert að skoða <strong>sýndargögn</strong> svo hægt sé að prófa allt. Þeim er eytt með einum smelli á{" "}
+            <a href="/admin" className="font-semibold underline">Yfirliti</a>.
           </div>
         ) : null}
         <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">{children}</div>
