@@ -145,7 +145,7 @@ export default async function Dashboard() {
         <StatCard label="Pikkoló ósent" value={num(pikkoloUnsent)} hint="pantanir sem eiga eftir að fara til Pikkoló" icon="pin" tone={pikkoloUnsent ? "warn" : "good"} href="/admin/pantanir?pikkolo=osent" />
       </div>
 
-      <div className="mt-6 grid items-start gap-6 xl:grid-cols-[1.4fr_1fr]">
+      <div className="mt-6 grid items-start gap-6 xl:grid-cols-[1.4fr_1fr] [&>*]:min-w-0">
         <Card title="Það sem þarf að gera" description="Smelltu á línu til að fara beint í verkið." padded={false}>
           {todo.length ? (
             <ul className="divide-y divide-line/70">
@@ -195,7 +195,7 @@ export default async function Dashboard() {
         </Card>
       </div>
 
-      <div className="mt-6 grid items-start gap-6 xl:grid-cols-[1.4fr_1fr]">
+      <div className="mt-6 grid items-start gap-6 xl:grid-cols-[1.4fr_1fr] [&>*]:min-w-0">
         <Card title="Sala síðustu 30 daga" description={`Samtals ${kr(month.total)} · meðalpöntun ${kr(month.count ? month.total / month.count : 0)}`}>
           <BarChart data={days} money height={200} />
         </Card>

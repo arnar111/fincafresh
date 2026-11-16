@@ -16,7 +16,7 @@ export default async function EditCodePage({ params }: { params: Promise<{ id: s
   return (
     <>
       <PageHeader title={c.code} description={`Notaður ${c.usedCount} sinnum.`} back={{ href: "/admin/afslattarkodar", label: "Allir kóðar" }} />
-      <div className="grid gap-5 lg:grid-cols-[400px_1fr]">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[400px_1fr]">
         <Card title="Stillingar kóða">
           <CodeForm value={{ id: c.id, code: c.code, description: c.description, type: c.type, value: c.value, appliesTo: c.appliesTo, minSubtotal: c.minSubtotal, usageLimit: c.usageLimit, expiresAt: dateInput(c.expiresAt), active: c.active }} />
         </Card>

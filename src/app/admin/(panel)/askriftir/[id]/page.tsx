@@ -76,7 +76,7 @@ export default async function SubscriptionDetail({ params }: { params: Promise<{
       </Explainer>
 
       <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           <Card title="Yfirlit">
             <div className={`mb-4 flex items-center gap-3 rounded-xl px-4 py-3 text-[15px] ${nextInfo.tone === "good" ? "bg-leaf/10 text-leaf" : nextInfo.tone === "warn" ? "bg-orange/10 text-orange-600" : "bg-cream text-muted"}`}>
               <Icon name="truck" className="h-5 w-5 shrink-0" />
@@ -134,8 +134,8 @@ export default async function SubscriptionDetail({ params }: { params: Promise<{
           <Card title="Breyta áskrift">
             <form action={updatePlan} className="space-y-4">
               <Hidden />
-              <div className="grid gap-4 sm:grid-cols-3">
-                <Field label="Kassi" className="sm:col-span-1">
+              <div className="grid gap-4 sm:grid-cols-[2fr_0.8fr_1.6fr]">
+                <Field label="Kassi">
                   <Select name="productId" defaultValue={s.productId}>
                     {boxes.map((b) => <option key={b.id} value={b.id}>{b.name} ({kr(b.price)})</option>)}
                   </Select>
@@ -182,7 +182,7 @@ export default async function SubscriptionDetail({ params }: { params: Promise<{
           </Card>
         </div>
 
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           <Card title="Viðskiptavinur">
             <div className="space-y-1 text-[15px]">
               <div className="font-semibold">{s.customer.name}</div>

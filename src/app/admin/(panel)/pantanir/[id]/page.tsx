@@ -104,7 +104,7 @@ export default async function OrderDetail({ params, searchParams }: { params: Pr
       </Explainer>
 
       <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           <Card title="Vörur" padded={false}>
             <ul className="divide-y divide-line/70">
               {order.items.map((i) => (
@@ -187,7 +187,7 @@ export default async function OrderDetail({ params, searchParams }: { params: Pr
           </Card>
         </div>
 
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           <Card title="Viðskiptavinur">
             <div className="space-y-1.5 text-[15px]">
               <div className="text-base font-semibold">{order.name}</div>

@@ -28,7 +28,7 @@ export function FruitForm({ fruit }: { fruit: FruitFormValue }) {
   const lite: LiteFruit = { ...v, id: v.id ?? "nyr", deluxeOnly: asDelux };
 
   return (
-    <form action={saveFruit} className="grid gap-5 lg:grid-cols-[1fr_400px]">
+    <form action={saveFruit} className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_400px]">
       {v.id ? <input type="hidden" name="id" value={v.id} /> : null}
       <input type="hidden" name="illustration" value={v.illustration} />
       <div className="space-y-5">

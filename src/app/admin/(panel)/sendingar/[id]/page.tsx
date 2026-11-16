@@ -91,7 +91,7 @@ export default async function DeliveryDetail({ params }: { params: Promise<{ id:
       </Explainer>
 
       <div className="grid gap-6 xl:grid-cols-[1.5fr_1fr]">
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           <Card title="Skref fyrir skref" padded={false}>
             <ol className="divide-y divide-line/70">
               <Step n={1} done={delivery.fruits.length > 0} title="Veldu ávextina í kassann">
@@ -100,7 +100,7 @@ export default async function DeliveryDetail({ params }: { params: Promise<{ id:
               <Step n={2} done={projection.count === 0 && totals.orders > 0} title="Búðu til áskriftarpantanir">
                 {projection.count ? (
                   <>
-                    <span className="mb-2 block"><strong className="text-ink">{plural(projection.count, "áskrift", "áskriftir")}</strong> eiga að fá kassa en eru ekki komnar með pöntun.{projection.skipped ? ` ${projection.skipped} sleppa þessari sendingu.` : ""}{projection.paused ? ` ${projection.paused} eru í hléi.` : ""}</span>
+                    <span className="mb-2 block"><strong className="text-ink">{plural(projection.count, "áskrift", "áskriftir")}</strong> {projection.count === 1 ? "á að fá kassa en er ekki komin" : "eiga að fá kassa en eru ekki komnar"} með pöntun.{projection.skipped ? ` ${projection.skipped} sleppa þessari sendingu.` : ""}{projection.paused ? ` ${projection.paused} eru í hléi.` : ""}</span>
                     <form action={generateOrders}>
                       <H />
                       <SubmitButton variant="primary" size="sm" confirm={`Búa til ${projection.count} áskriftarpantanir fyrir þessa sendingu? Það er óhætt að gera þetta aftur síðar, enginn fær tvær pantanir.`}>
@@ -109,7 +109,7 @@ export default async function DeliveryDetail({ params }: { params: Promise<{ id:
                     </form>
                   </>
                 ) : (
-                  <>Allar virkar áskriftir eru komnar með pöntun.{projection.already ? ` ${projection.already} áskriftarpantanir í þessari sendingu.` : ""}</>
+                  <>Allar virkar áskriftir eru komnar með pöntun.{projection.already ? ` ${plural(projection.already, "áskriftarpöntun", "áskriftarpantanir")} í þessari sendingu.` : ""}</>
                 )}
               </Step>
               <Step n={3} done={delivery.status !== "PLANNED"} title="Pakkaðu kössunum">
@@ -259,7 +259,7 @@ export default async function DeliveryDetail({ params }: { params: Promise<{ id:
           ) : null}
         </div>
 
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           <Card title="Pökkunarlisti" description="Kassar sem þarf að pakka í þessa sendingu." padded={false}>
             <div className={tableWrap}>
               <table className="w-full text-[14.5px]">

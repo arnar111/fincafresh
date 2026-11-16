@@ -77,7 +77,7 @@ export default async function SettingsPage() {
 
         <div id="askrift" className="scroll-mt-6">
           <Card title="Áskriftir" description="Sjálfgefinn afsláttur og hversu oft áskrifendur geta fengið kassa.">
-            <form action={saveSubscription} className="grid gap-6 lg:grid-cols-[260px_1fr]">
+            <form action={saveSubscription} className="grid grid-cols-1 gap-6 lg:grid-cols-[260px_1fr]">
               <Field label="Sjálfgefinn áskriftarafsláttur (%)" hint="Gildir fyrir kassa sem hafa ekki sinn eigin afslátt (stillt á hverjum kassa undir Vörur).">
                 <Input name="defaultDiscountPct" inputMode="numeric" defaultValue={s["subscription.defaultDiscountPct"]} />
               </Field>
@@ -104,7 +104,7 @@ export default async function SettingsPage() {
           </Card>
         </div>
 
-        <div id="adgangur" className="scroll-mt-6 grid gap-5 lg:grid-cols-2">
+        <div id="adgangur" className="scroll-mt-6 grid grid-cols-1 gap-5 lg:grid-cols-2">
           <Card title="Stjórnendur" description="Þau sem geta skráð sig inn í stjórnborðið." padded={false}>
             <ul className="divide-y divide-line/70">
               {admins.map((a) => (

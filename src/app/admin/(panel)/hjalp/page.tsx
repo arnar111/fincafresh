@@ -43,7 +43,7 @@ export default async function HelpPage() {
   return (
     <>
       <PageHeader title="Hjálp" description="Leiðbeiningar á mannamáli. Þú getur ekki skemmt neitt með því að prófa, og allt sem er hættulegt spyr fyrst." />
-      <div className="grid gap-6 lg:grid-cols-[220px_1fr]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[220px_1fr]">
         <nav className="h-fit rounded-2xl border border-line bg-white p-3 lg:sticky lg:top-6" aria-label="Efnisyfirlit">
           {TOC.map(([id, label]) => <a key={id} href={`#${id}`} className="block rounded-lg px-3 py-2 text-sm font-semibold text-burgundy hover:bg-cream">{label}</a>)}
         </nav>

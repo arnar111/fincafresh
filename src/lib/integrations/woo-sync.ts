@@ -70,7 +70,7 @@ export async function upsertWooCategory(c: WooCategory) {
     await db.category.update({ where: { id: byWoo.id }, data: { name: stripHtml(c.name) } });
     return { id: byWoo.id, created: false };
   }
-  const bySlug = await db.category.findUnique({ where: { slug: c.slug } });
+  const bySlug = (await db.category.findUnique({ where: { slug: c.slug } })) ?? (await db.category.findFirst({ where: { name: stripHtml(c.name), wooId: null } }));
   if (bySlug) {
     await db.category.update({ where: { id: bySlug.id }, data: { wooId: c.id } });
     return { id: bySlug.id, created: false };

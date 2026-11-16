@@ -75,7 +75,7 @@ export default async function DeliveriesPage() {
       </Explainer>
 
       <div className="grid gap-6 xl:grid-cols-[1.6fr_1fr]">
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           <Card title="Næstu sendingar" padded={false}>
             {upcoming.length ? (
               <ul className="divide-y divide-line/70">{upcoming.map((d) => <Row key={d.id} d={d} />)}</ul>

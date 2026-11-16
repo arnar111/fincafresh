@@ -101,7 +101,7 @@ function IntegrationCard({ id, title, logo, status, intro, children, aside }: { 
         <h2 className="flex-1 font-display text-xl text-burgundy">{title}</h2>
         <Badge tone={status.tone} className="text-[13px]">{status.label}</Badge>
       </header>
-      <div className="grid gap-6 p-5 lg:grid-cols-[1fr_1fr]">
+      <div className="grid grid-cols-1 gap-6 p-5 lg:grid-cols-[1fr_1fr]">
         <div className="space-y-3 text-[15px] text-ink/90">{intro}{aside}</div>
         <div className="space-y-4">{children}</div>
       </div>

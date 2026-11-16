@@ -61,7 +61,7 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
         }}
       />
 
-      <div className="mt-6 grid gap-5 lg:grid-cols-2">
+      <div className="mt-6 grid grid-cols-1 gap-5 lg:grid-cols-2">
         <Card
           title={<span className="inline-flex items-center gap-2">„Passar vel með“: handvalin meðmæli <HelpTip>Kerfið reiknar sjálft út hvað fólk kaupir saman (sjá Greiningu). Vörur sem þú festir hér birtast alltaf fyrst á vörusíðunni og í körfunni.</HelpTip></span>}
           description="Vörur sem birtast fyrst þegar viðskiptavinur skoðar þessa vöru eða hefur hana í körfunni."

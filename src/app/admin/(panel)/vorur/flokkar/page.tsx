@@ -18,7 +18,7 @@ export default async function CategoriesPage() {
         <p>Flokkar birtast sem hnappar í netversluninni svo viðskiptavinir finni vörurnar auðveldlega. Flokkar án vöru eru faldir sjálfkrafa.</p>
         <p>Röðun: lægri tala birtist fyrst.</p>
       </Explainer>
-      <div className="grid gap-5 lg:grid-cols-[1fr_340px]">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_340px]">
         <Card title="Allir flokkar" padded={false}>
           {cats.length === 0 ? (
             <EmptyState icon="tag" title="Engir flokkar ennþá">Búðu til fyrsta flokkinn hér til hliðar.</EmptyState>

@@ -83,7 +83,7 @@ export function ProductForm({
   const subPrice = Math.round((priceNum * (100 - pct)) / 100);
 
   return (
-    <form action={saveProduct} className="grid gap-5 lg:grid-cols-[1fr_340px]">
+    <form action={saveProduct} className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_340px]">
       {product.id ? <input type="hidden" name="id" value={product.id} /> : null}
       <input type="hidden" name="features" value={JSON.stringify(features.filter((f) => f.trim()))} />
 

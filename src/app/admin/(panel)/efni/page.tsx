@@ -31,7 +31,7 @@ export default async function ContentPage() {
         <p>Hver kassi hér stjórnar einum hluta af síðunni. Breyttu textanum og smelltu á <strong>Vista</strong>. Smelltu á „Skoða á síðunni“ til að sjá útkomuna.</p>
         <p>Auð lína í löngum texta býr til nýja málsgrein.</p>
       </Explainer>
-      <div className="grid gap-5 xl:grid-cols-2">
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
         <Section id="announcement" title="Borði efst á síðunni" description="Græna línan efst á öllum síðum. Hafðu hana stutta." where="/">
           <Field label="Texti"><Input name="announcement" defaultValue={s["store.announcement"]} placeholder="T.d. 5–10% afsláttur í áskrift" /></Field>
         </Section>

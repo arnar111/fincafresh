@@ -57,7 +57,7 @@ export async function PostHogPanel({ days }: { days: number }) {
       description={`Gögn beint úr PostHog, síðustu ${d} daga. Einstakir gestir eru taldir einu sinni.`}
       actions={<a href={cfg.apiHost} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-sm font-semibold text-burgundy hover:underline">Opna PostHog <Icon name="external" className="h-4 w-4" /></a>}
     >
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div>
           <h3 className="mb-2 font-semibold text-ink">Gestir á dag</h3>
           {perDay.error ? <ErrorNote msg={perDay.error} /> : perDay.data?.results.length ? (

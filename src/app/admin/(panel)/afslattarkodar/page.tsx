@@ -25,7 +25,7 @@ export default async function CodesPage() {
         <p>Búðu til kóða hér til hliðar. Viðskiptavinurinn slær hann inn í körfunni og afslátturinn reiknast sjálfkrafa.</p>
         <p><strong>Ábending:</strong> Kóði sem gildir <em>aðeins um áskriftir</em> er góð leið til að fá fólk til að prófa áskrift, t.d. „Fyrsti áskriftarkassinn 20% ódýrari“.</p>
       </Explainer>
-      <div className="grid gap-5 lg:grid-cols-[1fr_360px]">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_360px]">
         <Card title="Allir kóðar" padded={false}>
           {codes.length === 0 ? (
             <EmptyState icon="gift" title="Engir kóðar ennþá">Búðu til fyrsta kóðann hér til hliðar.</EmptyState>

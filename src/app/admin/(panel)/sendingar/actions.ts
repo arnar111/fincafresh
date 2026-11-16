@@ -144,12 +144,13 @@ export async function generateOrders(fd: FormData) {
   revalidatePath("/admin/pantanir");
   revalidatePath("/admin/askriftir");
   if (!r) fail(p(id), `Tókst ekki: ${error}`);
-  const parts = [`${r.created} nýjar áskriftarpantanir`];
-  if (r.skipped) parts.push(`${r.skipped} slepptu þessari sendingu`);
+  const one = (n: number) => n % 10 === 1 && n % 100 !== 11;
+  const parts = [one(r.created) ? `${r.created} ný áskriftarpöntun` : `${r.created} nýjar áskriftarpantanir`];
+  if (r.skipped) parts.push(one(r.skipped) ? `${r.skipped} sleppti þessari sendingu` : `${r.skipped} slepptu þessari sendingu`);
   if (r.paused) parts.push(`${r.paused} í hléi`);
-  if (r.notDue) parts.push(`${r.notDue} fá kassa í næstu sendingu á eftir`);
-  if (r.already) parts.push(`${r.already} voru þegar með pöntun`);
-  if (r.handled) parts.push(`${r.handled} höfðu þegar verið afgreiddar`);
+  if (r.notDue) parts.push(one(r.notDue) ? `${r.notDue} fær kassa í sendingunni á eftir` : `${r.notDue} fá kassa í sendingunni á eftir`);
+  if (r.already) parts.push(one(r.already) ? `${r.already} var þegar með pöntun` : `${r.already} voru þegar með pöntun`);
+  if (r.handled) parts.push(one(r.handled) ? `${r.handled} hafði þegar verið afgreidd` : `${r.handled} höfðu þegar verið afgreiddar`);
   done(p(id), parts.join(", ") + ".");
 }
 

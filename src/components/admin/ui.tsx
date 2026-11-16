@@ -103,5 +103,5 @@ export function SubStatusBadge({ status }: { status: string }) {
 
 export const th = "px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted";
 export const td = "px-4 py-3 align-middle";
-export const tableWrap = "overflow-x-auto";
+export const tableWrap = "relative overflow-x-auto";
 export const tableClass = "w-full min-w-[640px] border-collapse text-[14.5px] [&_tbody_tr]:border-t [&_tbody_tr]:border-line/70 [&_tbody_tr:hover]:bg-cream-50";

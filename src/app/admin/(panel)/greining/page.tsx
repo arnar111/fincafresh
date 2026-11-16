@@ -99,7 +99,7 @@ export default async function InsightsPage({ searchParams }: { searchParams: Pro
         <StatCard label="Virkar áskriftir" value={num(ch.active)} hint={`${ch.startedInPeriod} nýjar · ${ch.cancelledInPeriod} sagt upp á tímabilinu`} icon="users" />
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <Card title="Kaupferlið" description="Fjöldi heimsókna sem komust á hvert stig.">
           <div className="space-y-4">
             {steps.map((s, i) => (

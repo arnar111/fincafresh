@@ -62,7 +62,7 @@ export default async function CustomerDetail({ params }: { params: Promise<{ id:
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           <Card title="Áskriftir" padded={false}>
             {c.subscriptions.length ? (
               <ul className="divide-y divide-line/70">
@@ -109,7 +109,7 @@ export default async function CustomerDetail({ params }: { params: Promise<{ id:
           </Card>
         </div>
 
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           <Card title="Samskiptaupplýsingar">
             <div className="mb-4 flex flex-wrap gap-2">
               <a href={`mailto:${c.email}`} className={buttonClass("light", "sm")}><Icon name="mail" className="h-4 w-4" /> Senda póst</a>
