@@ -1,0 +1,313 @@
+// Fincafresh gagnagrunnur.
+// Sjálfgefið SQLite (ein skrá). Til að nota Postgres: breyttu provider í "postgresql"
+// og DATABASE_URL í .env. Sjá README.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model AdminUser {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  createdAt    DateTime @default(now())
+  lastLoginAt  DateTime?
+}
+
+model Customer {
+  id             String   @id @default(cuid())
+  email          String   @unique
+  name           String   @default("")
+  phone          String   @default("")
+  kennitala      String   @default("")
+  street         String   @default("")
+  postalCode     String   @default("")
+  city           String   @default("")
+  passwordHash   String?
+  marketingOptIn Boolean  @default(false)
+  wooId          Int?     @unique
+  repeatId       String?
+  notes          String   @default("")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  orders        Order[]
+  subscriptions Subscription[]
+}
+
+model Category {
+  id        String    @id @default(cuid())
+  slug      String    @unique
+  name      String
+  sortOrder Int       @default(0)
+  wooId     Int?      @unique
+  products  Product[]
+}
+
+// type: BOX (ávaxtakassi, hægt að kaupa í áskrift) eða ITEM (netverslunarvara)
+model Product {
+  id                    String    @id @default(cuid())
+  slug                  String    @unique
+  sku                   String    @default("")
+  name                  String
+  type                  String    @default("ITEM")
+  tier                  String?   // CLASSIC | GRANDE | DELUX fyrir kassa
+  tagline               String    @default("")
+  shortDescription      String    @default("")
+  description           String    @default("")
+  features              String    @default("[]") // JSON listi af textum
+  images                String    @default("[]") // JSON listi af slóðum
+  price                 Int       // ISK
+  compareAtPrice        Int?
+  subscriptionDiscountPct Int?    // null = sjálfgefinn afsláttur úr stillingum
+  weightLabel           String    @default("")
+  suitsFor              String    @default("")
+  storageType           String    @default("Refrigerated") // Pikkoló: Refrigerated | Frozen | Ambient
+  stock                 Int?
+  trackStock            Boolean   @default(false)
+  active                Boolean   @default(true)
+  featured              Boolean   @default(false)
+  sortOrder             Int       @default(0)
+  wooId                 Int?      @unique
+  syncToWoo             Boolean   @default(false)
+  categoryId            String?
+  category              Category? @relation(fields: [categoryId], references: [id])
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  orderItems    OrderItem[]
+  subscriptions Subscription[]
+  pinsFrom      RecommendationPin[] @relation("pinFrom")
+  pinsTo        RecommendationPin[] @relation("pinTo")
+}
+
+model Fruit {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  variety     String   @default("")
+  illustration String  @default("") // lykill að teikningu, t.d. "mango"
+  color       String   @default("#F9C214")
+  imageUrl    String   @default("")
+  origin      String   @default("Spánn")
+  region      String   @default("")
+  farmer      String   @default("")
+  season      String   @default("")
+  description String   @default("")
+  taste       String   @default("")
+  storage     String   @default("")
+  ripeness    String   @default("")
+  goodToKnow  String   @default("")
+  reviewed    Boolean  @default(false) // Fincafresh hefur yfirfarið textann
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  deliveries DeliveryFruit[]
+}
+
+// Sending = ein afhending frá Spáni (t.d. "fimmtudaginn 26. nóv")
+model Delivery {
+  id         String   @id @default(cuid())
+  date       DateTime
+  cutoffDate DateTime?
+  status     String   @default("PLANNED") // PLANNED | PACKING | SHIPPED | DONE
+  title      String   @default("")
+  note       String   @default("")
+  createdAt  DateTime @default(now())
+
+  fruits DeliveryFruit[]
+  orders Order[]
+}
+
+model DeliveryFruit {
+  id         String   @id @default(cuid())
+  deliveryId String
+  fruitId    String
+  deluxeOnly Boolean  @default(false)
+  sortOrder  Int      @default(0)
+  delivery   Delivery @relation(fields: [deliveryId], references: [id], onDelete: Cascade)
+  fruit      Fruit    @relation(fields: [fruitId], references: [id], onDelete: Cascade)
+
+  @@unique([deliveryId, fruitId])
+}
+
+model Subscription {
+  id                 String    @id @default(cuid())
+  customerId         String
+  productId          String
+  quantity           Int       @default(1)
+  everyNthDelivery   Int       @default(1) // 1 = hver sending, 2 = önnur hver
+  unitPrice          Int       // verð fyrir afslátt
+  discountPct        Int
+  status             String    @default("ACTIVE") // ACTIVE | PAUSED | CANCELLED
+  skipNext           Boolean   @default(false)
+  pausedUntil        DateTime?
+  nextDeliveryDate   DateTime?
+  deliveriesSinceLast Int      @default(0)
+  deliveryMethod     String    @default("PIKKOLO")
+  pikkoloStationId   String    @default("")
+  pikkoloStationName String    @default("")
+  street             String    @default("")
+  postalCode         String    @default("")
+  city               String    @default("")
+  repeatId           String    @default("")
+  cancelReason       String    @default("")
+  source             String    @default("WEB") // WEB | ADMIN | IMPORT
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  cancelledAt        DateTime?
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  product  Product  @relation(fields: [productId], references: [id])
+  orders   Order[]
+}
+
+model Order {
+  id                    String    @id @default(cuid())
+  number                Int       @unique
+  customerId            String?
+  email                 String
+  name                  String
+  phone                 String    @default("")
+  kennitala             String    @default("")
+  street                String    @default("")
+  postalCode            String    @default("")
+  city                  String    @default("")
+  status                String    @default("NEW") // NEW | PROCESSING | SHIPPED | DELIVERED | CANCELLED
+  paymentStatus         String    @default("UNPAID") // UNPAID | PAID | REFUNDED | FAILED
+  paymentMethod         String    @default("")
+  paymentRef            String    @default("")
+  subtotal              Int
+  discount              Int       @default(0)
+  shipping              Int       @default(0)
+  total                 Int
+  discountCode          String    @default("")
+  deliveryMethod        String    @default("PIKKOLO") // PIKKOLO | HOME | PICKUP
+  deliveryDate          DateTime?
+  pikkoloStationId      String    @default("")
+  pikkoloStationName    String    @default("")
+  pikkoloDeliveryTimeId String    @default("")
+  pikkoloOrderId        String    @default("")
+  pikkoloStatus         String    @default("")
+  samskipRef            String    @default("")
+  trackingNumber        String    @default("")
+  source                String    @default("WEB") // WEB | WOO | SUBSCRIPTION | ADMIN
+  subscriptionId        String?
+  deliveryId            String?
+  wooId                 Int?      @unique
+  customerNote          String    @default("")
+  internalNote          String    @default("")
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  customer     Customer?     @relation(fields: [customerId], references: [id])
+  subscription Subscription? @relation(fields: [subscriptionId], references: [id])
+  delivery     Delivery?     @relation(fields: [deliveryId], references: [id])
+  items        OrderItem[]
+}
+
+model OrderItem {
+  id             String   @id @default(cuid())
+  orderId        String
+  productId      String?
+  name           String
+  sku            String   @default("")
+  unitPrice      Int
+  quantity       Int
+  isSubscription Boolean  @default(false)
+  everyNthDelivery Int    @default(1)
+  order          Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product        Product? @relation(fields: [productId], references: [id])
+}
+
+model DiscountCode {
+  id          String    @id @default(cuid())
+  code        String    @unique
+  description String    @default("")
+  type        String    @default("PERCENT") // PERCENT | FIXED
+  value       Int
+  appliesTo   String    @default("ALL") // ALL | SUBSCRIPTION | SINGLE
+  minSubtotal Int       @default(0)
+  usageLimit  Int?
+  usedCount   Int       @default(0)
+  active      Boolean   @default(true)
+  expiresAt   DateTime?
+  createdAt   DateTime  @default(now())
+}
+
+model RecommendationPin {
+  id                   String  @id @default(cuid())
+  productId            String
+  recommendedProductId String
+  sortOrder            Int     @default(0)
+  product              Product @relation("pinFrom", fields: [productId], references: [id], onDelete: Cascade)
+  recommended          Product @relation("pinTo", fields: [recommendedProductId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, recommendedProductId])
+}
+
+model Setting {
+  key       String   @id
+  value     String
+  encrypted Boolean  @default(false)
+  updatedAt DateTime @updatedAt
+}
+
+model Inquiry {
+  id        String   @id @default(cuid())
+  type      String   @default("CONTACT") // B2B | CONTACT
+  name      String
+  email     String
+  phone     String   @default("")
+  company   String   @default("")
+  message   String
+  status    String   @default("NEW") // NEW | HANDLED
+  createdAt DateTime @default(now())
+}
+
+model NewsletterSubscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  source    String   @default("footer")
+  createdAt DateTime @default(now())
+}
+
+// Eigin atburðaskráning (virkar líka án PostHog): skoðanir, karfa, uppsala o.fl.
+model AnalyticsEvent {
+  id        String   @id @default(cuid())
+  name      String
+  sessionId String   @default("")
+  productId String?
+  props     String   @default("{}")
+  createdAt DateTime @default(now())
+
+  @@index([name, createdAt])
+}
+
+model ActivityLog {
+  id        String   @id @default(cuid())
+  kind      String   // t.d. order, subscription, integration, system
+  level     String   @default("info") // info | success | warning | error
+  message   String
+  meta      String   @default("{}")
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+model EmailOutbox {
+  id        String   @id @default(cuid())
+  to        String
+  subject   String
+  html      String
+  status    String   @default("LOGGED") // SENT | LOGGED | FAILED
+  error     String   @default("")
+  createdAt DateTime @default(now())
+}

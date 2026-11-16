@@ -1,0 +1,16 @@
+export const ADMIN_NAV = [
+  { href: "/admin", label: "Yfirlit", icon: "home", help: "Staðan í dag og það sem þarf að gera" },
+  { href: "/admin/pantanir", label: "Pantanir", icon: "box", help: "Allar pantanir, afgreiðsla og Pikkoló" },
+  { href: "/admin/askriftir", label: "Áskriftir", icon: "repeat", help: "Áskrifendur, hlé, sleppa og uppsagnir" },
+  { href: "/admin/sendingar", label: "Sendingar", icon: "truck", help: "Hvað fer í næsta kassa, pökkunarlisti og innkaup" },
+  { href: "/admin/vidskiptavinir", label: "Viðskiptavinir", icon: "users", help: "Allir viðskiptavinir og saga þeirra" },
+  { href: "/admin/vorur", label: "Vörur", icon: "tag", help: "Kassar og vörur í netverslun, verð og myndir" },
+  { href: "/admin/avextir", label: "Ávextir", icon: "leaf", help: "Upplýsingar sem birtast þegar smellt er á ávöxt" },
+  { href: "/admin/afslattarkodar", label: "Afsláttarkóðar", icon: "gift", help: "Búa til og stjórna afsláttarkóðum" },
+  { href: "/admin/greining", label: "Greining", icon: "chart", help: "Hegðun notenda, keyptu líka, uppsala í áskrift" },
+  { href: "/admin/fyrirspurnir", label: "Fyrirspurnir", icon: "inbox", help: "Fyrirtækjafyrirspurnir, póstlisti og útsendur póstur" },
+  { href: "/admin/efni", label: "Efni síðunnar", icon: "edit", help: "Textar á forsíðu, spurt og svarað o.fl." },
+  { href: "/admin/tengingar", label: "Tengingar", icon: "plug", help: "WooCommerce, Pikkoló, Repeat, Samskip, PostHog" },
+  { href: "/admin/stillingar", label: "Stillingar", icon: "settings", help: "Sendingarverð, áskriftir, greiðslur og aðgangur" },
+  { href: "/admin/hjalp", label: "Hjálp", icon: "help", help: "Leiðbeiningar á mannamáli" },
+] as const;

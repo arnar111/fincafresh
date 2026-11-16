@@ -1,0 +1,17 @@
+node_modules
+.next
+out
+*.tsbuildinfo
+next-env.d.ts
+# Gagnagrunnur og upphleðslur (geymt á netþjóni, ekki í git)
+prisma/*.db
+prisma/*.db-journal
+public/uploads/*
+!public/uploads/.gitkeep
+# Leyndarmál
+.env
+.env.local
+.env.*.local
+# Prófanir
+test-results
+playwright-report
